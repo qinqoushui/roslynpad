@@ -19,6 +19,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ExtractInterface
         public string SelectPublicMembersToFormInterface => "Select Public Members To Form Interface";
         public string SelectAll => "Select All";
         public string DeselectAll => "Deselect All";
+        // ReSharper disable once InconsistentNaming
         public string OK => "OK";
         public string Cancel => "Cancel";
 
@@ -127,8 +128,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ExtractInterface
 
         public object ViewModel
         {
-            get => DataContext;
-            set
+            get => DataContext; set
             {
                 DataContext = value;
                 _viewModel = (ExtractInterfaceDialogViewModel)value;

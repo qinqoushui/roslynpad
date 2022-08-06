@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -38,6 +39,9 @@ namespace RoslynPad.Roslyn
             ImmutableArray<string> allowableExtensions,
             CompletionItemRules itemRules)
         {
+            Debug.Assert(searchPaths.All(path => PathUtilities.IsAbsolute(path)));
+            Debug.Assert(baseDirectoryOpt == null || PathUtilities.IsAbsolute(baseDirectoryOpt));
+
             _searchPaths = searchPaths;
             _baseDirectoryOpt = baseDirectoryOpt!;
             _allowableExtensions = allowableExtensions;
@@ -46,20 +50,37 @@ namespace RoslynPad.Roslyn
             _itemRules = itemRules;
         }
 
-        private string[] GetLogicalDrives()
+        // virtual for testing
+        protected virtual string[] GetLogicalDrives()
             => IOUtilities.PerformIO(Directory.GetLogicalDrives, Array.Empty<string>());
 
-        private bool DirectoryExists(string fullPath) =>
-            Directory.Exists(fullPath);
+        // virtual for testing
+        protected virtual bool DirectoryExists(string fullPath)
+        {
+            Debug.Assert(PathUtilities.IsAbsolute(fullPath));
+            return Directory.Exists(fullPath);
+        }
 
-        private IEnumerable<string> EnumerateDirectories(string fullDirectoryPath) =>
-            IOUtilities.PerformIO(() => Directory.EnumerateDirectories(fullDirectoryPath), Array.Empty<string>());
+        // virtual for testing
+        protected virtual IEnumerable<string> EnumerateDirectories(string fullDirectoryPath)
+        {
+            Debug.Assert(PathUtilities.IsAbsolute(fullDirectoryPath));
+            return IOUtilities.PerformIO(() => Directory.EnumerateDirectories(fullDirectoryPath), Array.Empty<string>());
+        }
 
-        private IEnumerable<string> EnumerateFiles(string fullDirectoryPath) =>
-            IOUtilities.PerformIO(() => Directory.EnumerateFiles(fullDirectoryPath), Array.Empty<string>());
+        // virtual for testing
+        protected virtual IEnumerable<string> EnumerateFiles(string fullDirectoryPath)
+        {
+            Debug.Assert(PathUtilities.IsAbsolute(fullDirectoryPath));
+            return IOUtilities.PerformIO(() => Directory.EnumerateFiles(fullDirectoryPath), Array.Empty<string>());
+        }
 
-        private bool IsVisibleFileSystemEntry(string fullPath) =>
-            IOUtilities.PerformIO(() => (File.GetAttributes(fullPath) & (FileAttributes.Hidden | FileAttributes.System)) == 0, false);
+        // virtual for testing
+        protected virtual bool IsVisibleFileSystemEntry(string fullPath)
+        {
+            Debug.Assert(PathUtilities.IsAbsolute(fullPath));
+            return IOUtilities.PerformIO(() => (File.GetAttributes(fullPath) & (FileAttributes.Hidden | FileAttributes.System)) == 0, false);
+        }
 
         private CompletionItem CreateNetworkRoot()
             => CommonCompletionItem.Create(
@@ -98,7 +119,8 @@ namespace RoslynPad.Roslyn
             return Task.Run(() => GetItems(directoryPath, cancellationToken), cancellationToken);
         }
 
-        private ImmutableArray<CompletionItem> GetItems(string directoryPath, CancellationToken cancellationToken)
+        // internal for testing
+        internal ImmutableArray<CompletionItem> GetItems(string directoryPath, CancellationToken cancellationToken)
         {
             if (!PathUtilities.IsUnixLikePlatform && directoryPath.Length == 1 && directoryPath[0] == '\\')
             {
@@ -193,6 +215,8 @@ namespace RoslynPad.Roslyn
 
         private IEnumerable<CompletionItem> GetItemsInDirectory(string fullDirectoryPath, CancellationToken cancellationToken)
         {
+            Debug.Assert(PathUtilities.IsAbsolute(fullDirectoryPath));
+
             cancellationToken.ThrowIfCancellationRequested();
 
             if (!DirectoryExists(fullDirectoryPath))

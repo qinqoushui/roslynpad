@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
 
 namespace RoslynPad.Build
 {
@@ -11,7 +10,6 @@ namespace RoslynPad.Build
             ImmutableArray<string> imports,
             ImmutableArray<string> disabledDiagnostics,
             string workingDirectory,
-            SourceCodeKind sourceCodeKind,
             bool checkOverflow = false,
             bool allowUnsafe = true)
         {
@@ -20,7 +18,6 @@ namespace RoslynPad.Build
             Imports = imports;
             DisabledDiagnostics = disabledDiagnostics;
             WorkingDirectory = workingDirectory;
-            SourceCodeKind = sourceCodeKind;
             CheckOverflow = checkOverflow;
             AllowUnsafe = allowUnsafe;
         }
@@ -30,7 +27,6 @@ namespace RoslynPad.Build
         public ImmutableArray<string> Imports { get; set; }
         public ImmutableArray<string> DisabledDiagnostics { get; }
         public string WorkingDirectory { get; set; }
-        public SourceCodeKind SourceCodeKind { get; }
         public bool CheckOverflow { get; }
         public bool AllowUnsafe { get; }
     }

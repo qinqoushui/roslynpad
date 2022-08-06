@@ -73,7 +73,7 @@ namespace RoslynPad.Roslyn.CodeFixes
 
             private readonly ImmutableDictionary<LanguageKind, Lazy<ImmutableArray<IConfigurationFixProvider>>> _configurationProvidersMap;
 
-            private ImmutableDictionary<object, FixAllProviderInfo?> _fixAllProviderMap;
+            private ImmutableDictionary<object, FixAllProviderInfo> _fixAllProviderMap;
 
             [ImportingConstructor]
             public CodeFixService(
@@ -95,7 +95,7 @@ namespace RoslynPad.Roslyn.CodeFixes
                 _projectFixersMap = new ConditionalWeakTable<IReadOnlyList<AnalyzerReference>, ImmutableDictionary<string, List<CodeFixProvider>>>();
                 _analyzerReferenceToFixersMap = new ConditionalWeakTable<AnalyzerReference, ProjectCodeFixProvider>();
                 _createProjectCodeFixProvider = new ConditionalWeakTable<AnalyzerReference, ProjectCodeFixProvider>.CreateValueCallback(r => new ProjectCodeFixProvider(r));
-                _fixAllProviderMap = ImmutableDictionary<object, FixAllProviderInfo?>.Empty;
+                _fixAllProviderMap = ImmutableDictionary<object, FixAllProviderInfo>.Empty;
             }
 
             public async Task<FirstDiagnosticResult> GetMostSevereFixableDiagnosticAsync(
@@ -179,7 +179,7 @@ namespace RoslynPad.Roslyn.CodeFixes
                 // group diagnostics by their diagnostics span
                 // invariant: later code gathers & runs CodeFixProviders for diagnostics with one identical diagnostics span (that gets set later as CodeFixCollection's TextSpan)
                 Dictionary<TextSpan, List<DiagnosticData>>? aggregatedDiagnostics = null;
-                foreach (var diagnostic in await _diagnosticService.GetDiagnosticsForSpanAsync(document, range, includeSuppressedDiagnostics: includeConfigurationFixes, cancellationToken: cancellationToken).ConfigureAwait(false))
+                foreach (var diagnostic in await _diagnosticService.GetDiagnosticsForSpanAsync(document, range, diagnosticIdOpt: null, includeConfigurationFixes, cancellationToken: cancellationToken).ConfigureAwait(false))
                 {
                     if (diagnostic.IsSuppressed)
                     {
@@ -745,13 +745,14 @@ namespace RoslynPad.Roslyn.CodeFixes
                 private ImmutableArray<CodeFixProvider> CreateFixers(string language)
                 {
                     // check whether the analyzer reference knows how to return fixers directly.
+                    // ReSharper disable once SuspiciousTypeConversion.Global
                     if (_reference is ICodeFixProviderFactory codeFixProviderFactory)
                     {
                         return codeFixProviderFactory.GetFixers();
                     }
 
                     // otherwise, see whether we can pick it up from reference itself
-                    if (_reference is not AnalyzerFileReference analyzerFileReference)
+                    if (!(_reference is AnalyzerFileReference analyzerFileReference))
                     {
                         return ImmutableArray<CodeFixProvider>.Empty;
                     }
@@ -772,12 +773,11 @@ namespace RoslynPad.Roslyn.CodeFixes
                                     var attribute = typeInfo.GetCustomAttribute<ExportCodeFixProviderAttribute>();
                                     if (attribute != null)
                                     {
-                                        if ((attribute.Languages == null ||
+                                        if (attribute.Languages == null ||
                                             attribute.Languages.Length == 0 ||
                                             attribute.Languages.Contains(language))
-                                            && Activator.CreateInstance(typeInfo.AsType()) is CodeFixProvider provider)
                                         {
-                                            builder.Add(provider);
+                                            builder.Add((CodeFixProvider)Activator.CreateInstance(typeInfo.AsType()));
                                         }
                                     }
                                 }

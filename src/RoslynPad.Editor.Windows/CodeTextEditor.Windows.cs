@@ -6,8 +6,6 @@ namespace RoslynPad.Editor
 {
     partial class CodeTextEditor
     {
-        private SearchReplacePanel? _searchReplacePanel;
-
         partial void Initialize()
         {
             ShowLineNumbers = true;
@@ -16,10 +14,8 @@ namespace RoslynPad.Editor
             MouseHoverStopped += OnMouseHoverStopped;
 
             ToolTipService.SetInitialShowDelay(this, 0);
-            _searchReplacePanel = SearchReplacePanel.Install(this);
+            SearchReplacePanel.Install(this);
         }
-
-        public SearchReplacePanel SearchReplacePanel => _searchReplacePanel!;
 
         partial void InitializeToolTip()
         {

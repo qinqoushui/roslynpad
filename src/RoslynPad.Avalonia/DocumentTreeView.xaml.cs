@@ -7,7 +7,7 @@ using RoslynPad.UI;
 
 namespace RoslynPad
 {
-    public class DocumentTreeView : UserControl
+    class DocumentTreeView : UserControl
     {
         private MainViewModel _viewModel;
 
@@ -47,7 +47,7 @@ namespace RoslynPad
 
         protected override void OnDataContextChanged(EventArgs e)
         {
-            _viewModel = DataContext as MainViewModel ?? throw new InvalidOperationException("DataContext is null");
+            _viewModel = (MainViewModel)DataContext;
         }
 
 
@@ -64,12 +64,10 @@ namespace RoslynPad
             }
         }
 
-        private void OpenDocument(object? source)
+        private void OpenDocument(object source)
         {
-            if ((source as Control)?.DataContext is DocumentViewModel documentViewModel)
-            {
-                _viewModel.OpenDocument(documentViewModel);
-            }
+            var documentViewModel = (DocumentViewModel)((Control)source).DataContext;
+            _viewModel.OpenDocument(documentViewModel);
         }
     }
 }

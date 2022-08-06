@@ -154,7 +154,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ExtractInterface
         {
             public ISymbol MemberSymbol { get; }
 
-            private static readonly SymbolDisplayFormat s_memberDisplayFormat = new(
+            private static readonly SymbolDisplayFormat _memberDisplayFormat = new SymbolDisplayFormat(
                 genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
                 memberOptions: SymbolDisplayMemberOptions.IncludeParameters,
                 parameterOptions: SymbolDisplayParameterOptions.IncludeType | SymbolDisplayParameterOptions.IncludeParamsRefOut | SymbolDisplayParameterOptions.IncludeOptionalBrackets,
@@ -173,7 +173,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ExtractInterface
                 set => SetProperty(ref _isChecked, value);
             }
 
-            public string MemberName => MemberSymbol.ToDisplayString(s_memberDisplayFormat);
+            public string MemberName => MemberSymbol.ToDisplayString(_memberDisplayFormat);
 
             public Glyph Glyph => MemberSymbol.GetGlyph();
         }

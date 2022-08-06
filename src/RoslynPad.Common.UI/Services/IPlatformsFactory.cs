@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using RoslynPad.Build;
+﻿using System;
+using System.Collections.Generic;
 
 namespace RoslynPad.UI
 {
@@ -8,5 +8,7 @@ namespace RoslynPad.UI
         IEnumerable<ExecutionPlatform> GetExecutionPlatforms();
 
         string DotNetExecutable { get; }
+
+        event Action Changed;
     }
 }

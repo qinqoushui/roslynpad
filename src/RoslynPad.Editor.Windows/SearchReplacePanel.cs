@@ -27,7 +27,7 @@ namespace RoslynPad.Editor
         private SearchReplacePanelAdorner _adorner;
         private ISearchStrategy _strategy;
 
-        private readonly ToolTip _messageView = new() { Placement = PlacementMode.Bottom, StaysOpen = true, Focusable = false };
+        private ToolTip _messageView = new ToolTip { Placement = PlacementMode.Bottom, StaysOpen = true, Focusable = false };
 
         #region DependencyProperties
         /// <summary>
@@ -658,7 +658,7 @@ namespace RoslynPad.Editor
 
     class SearchReplacePanelAdorner : Adorner
     {
-        private readonly SearchReplacePanel _panel;
+        private SearchReplacePanel _panel;
 
         public SearchReplacePanelAdorner(TextArea textArea, SearchReplacePanel panel)
             : base(textArea)
@@ -671,7 +671,8 @@ namespace RoslynPad.Editor
 
         protected override Visual GetVisualChild(int index)
         {
-            if (index != 0) throw new ArgumentOutOfRangeException(nameof(index));
+            if (index != 0)
+                throw new ArgumentOutOfRangeException();
             return _panel;
         }
 
@@ -710,9 +711,9 @@ namespace RoslynPad.Editor
         public void Draw(TextView textView, DrawingContext drawingContext)
         {
             if (textView == null)
-                throw new ArgumentNullException(nameof(textView));
+                throw new ArgumentNullException("textView");
             if (drawingContext == null)
-                throw new ArgumentNullException(nameof(drawingContext));
+                throw new ArgumentNullException("drawingContext");
 
             if (CurrentResults == null || !textView.VisualLinesValid)
                 return;
@@ -745,14 +746,14 @@ namespace RoslynPad.Editor
     public static class SearchCommandsEx
     {
         /// <summary>Replaces the next occurrence in the document.</summary>
-        public static readonly RoutedCommand ReplaceNext = new("ReplaceNext", typeof(SearchReplacePanel),
+        public static readonly RoutedCommand ReplaceNext = new RoutedCommand("ReplaceNext", typeof(SearchReplacePanel),
             new InputGestureCollection
             {
                 new KeyGesture(Key.R, ModifierKeys.Alt)
             });
 
         /// <summary>Replaces all the occurrences in the document.</summary>
-        public static readonly RoutedCommand ReplaceAll = new("ReplaceAll", typeof(SearchReplacePanel),
+        public static readonly RoutedCommand ReplaceAll = new RoutedCommand("ReplaceAll", typeof(SearchReplacePanel),
             new InputGestureCollection
             {
                 new KeyGesture(Key.A, ModifierKeys.Alt)

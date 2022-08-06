@@ -11,17 +11,15 @@ namespace RoslynPad.Editor
 {
     internal static class AvaloniaExtensions
     {
-        public static T? FindAncestorByType<T>(this IControl control)
-            where T : class, IControl
+        public static T FindAncestorByType<T>(this IControl control)
+            where T : IControl
         {
-            IControl? result = control;
-
-            while (result != null && !(result is T))
+            while (control != null && !(control is T))
             {
-                result = result.Parent;
+                control = control.Parent;
             }
 
-            return result as T;
+            return (T)control!;
         }
 
         public static Window? GetWindow(this Control c) => c.FindAncestorByType<Window>();

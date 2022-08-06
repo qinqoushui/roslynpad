@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Avalon.Windows.Controls;
+using RoslynPad.Annotations;
 using RoslynPad.UI;
 
 namespace RoslynPad
@@ -108,13 +109,15 @@ namespace RoslynPad
 
         public Func<string, string> FilePathFactory { get; set; }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
 
+        [NotifyPropertyChangedInvocator]
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
+        [NotifyPropertyChangedInvocator]
         protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
         {
             if (!EqualityComparer<T>.Default.Equals(field, value))
@@ -152,7 +155,7 @@ namespace RoslynPad
                     SaveButton.Visibility = Visibility.Collapsed;
                     OverwriteButton.Visibility = Visibility.Visible;
                     DocumentTextBox.IsEnabled = false;
-                    _ = Dispatcher.InvokeAsync(() => OverwriteButton.Focus());
+                    Dispatcher.InvokeAsync(() => OverwriteButton.Focus());
                 }
                 else
                 {

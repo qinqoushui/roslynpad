@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ using Roslyn.Utilities;
 namespace RoslynPad.Roslyn.QuickInfo
 {
     [Export(typeof(IQuickInfoProvider)), Shared]
+    [SuppressMessage("ReSharper", "PossibleMultipleEnumeration")]
     internal sealed class QuickInfoProvider : IQuickInfoProvider
     {
         private readonly IDeferredQuickInfoContentProvider _contentProvider;
@@ -139,7 +141,7 @@ namespace RoslynPad.Roslyn.QuickInfo
             }
 
             // Take the first result with no errors.
-            var bestBinding = candidateResults.FirstOrDefault(c => c.Item3.Count > 0 && !ErrorVisitor.ContainsError(c.Item3.First()));
+            var bestBinding = candidateResults.FirstOrDefault(c => c.Item3.Count > 0 && !ErrorVisitor.ContainsError(c.Item3.FirstOrDefault()));
 
             // Every file binds with errors. Take the first candidate, which is from the current file.
             if (bestBinding == null)
@@ -157,13 +159,13 @@ namespace RoslynPad.Roslyn.QuickInfo
             foreach (var candidate in candidateResults)
             {
                 // Does the candidate have anything remotely equivalent?
-                if (!candidate.Item3.Intersect(bestBinding.Item3, SymbolEqualityComparer.Default).Any())
+                if (!candidate.Item3.Intersect(bestBinding.Item3, LinkedFilesSymbolEquivalenceComparer.Instance).Any())
                 {
                     invalidProjects.Add(candidate.Item1.ProjectId);
                 }
             }
 
-            var supportedPlatforms = new SupportedPlatformData(document.Project.Solution, invalidProjects, candidateProjects);
+            var supportedPlatforms = new SupportedPlatformData(invalidProjects, candidateProjects, document.Project.Solution.Workspace);
             return await CreateContentAsync(document.Project.Solution.Workspace, token, bestBinding.Item2, bestBinding.Item3, supportedPlatforms, cancellationToken).ConfigureAwait(false);
         }
 
@@ -298,8 +300,7 @@ namespace RoslynPad.Roslyn.QuickInfo
                 var symbol = symbols.First().OriginalDefinition;
 
                 // if generating quick info for an attribute, bind to the class instead of the constructor
-                if (token.Parent != null &&
-                    syntaxFactsService.IsAttributeName(token.Parent) &&
+                if (syntaxFactsService.IsAttributeName(token.Parent) &&
                     symbol.ContainingType?.IsAttribute() == true)
                 {
                     symbol = symbol.ContainingType;
@@ -334,7 +335,7 @@ namespace RoslynPad.Roslyn.QuickInfo
                 symbols = symbols.Where(IsOk)
                     .Where(s => IsAccessible(s, enclosingType!))
                     .Concat(overloads)
-                    .Distinct(SymbolEqualityComparer.Default)
+                    .Distinct(SymbolEquivalenceComparer.Instance)
                     .ToImmutableArray();
 
                 if (symbols.Any())
@@ -375,7 +376,7 @@ namespace RoslynPad.Roslyn.QuickInfo
 
         private class ErrorVisitor : SymbolVisitor<bool>
         {
-            private static readonly ErrorVisitor _instance = new();
+            private static readonly ErrorVisitor _instance = new ErrorVisitor();
 
             public static bool ContainsError(ISymbol symbol)
             {

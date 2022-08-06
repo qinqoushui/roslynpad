@@ -1,7 +1,7 @@
 ﻿using Microsoft.Win32;
 using NuGet.Versioning;
-using RoslynPad.Build;
 using RoslynPad.UI;
+using RoslynPad.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -18,46 +18,50 @@ namespace RoslynPad
         private string? _dotnetExe;
         private string? _sdkPath;
 
+        public event Action Changed = delegate { };
+
         public IEnumerable<ExecutionPlatform> GetExecutionPlatforms()
         {
-            foreach (var version in GetCoreVersions())
+            if (GetCoreVersions() is var core)
             {
-                yield return new ExecutionPlatform(version.name, version.tfm, version.verion, Architecture.X64, isCore: true);
+                foreach (var version in core.versions)
+                {
+                    yield return new ExecutionPlatform(".NET Core", version.tfm, version.name, Architecture.X64, isCore: true);
+                }
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 var targetFrameworkName = GetNetFrameworkName();
-                yield return new ExecutionPlatform(".NET Framework x86", targetFrameworkName, null, Architecture.X86, isCore: false);
-                yield return new ExecutionPlatform(".NET Framework x64", targetFrameworkName, null, Architecture.X64, isCore: false);
+                yield return new ExecutionPlatform(".NET Framework x86", targetFrameworkName, string.Empty, Architecture.X86, isCore: false);
+                yield return new ExecutionPlatform(".NET Framework x64", targetFrameworkName, string.Empty, Architecture.X64, isCore: false);
             }
         }
 
         public string DotNetExecutable => FindNetCore().dotnetExe;
 
-        private IReadOnlyList<(string name, string tfm, NuGetVersion verion)> GetCoreVersions()
+        private (IReadOnlyList<(string tfm, string name)> versions, string dotnetExe) GetCoreVersions()
         {
-            var (_, sdkPath) = FindNetCore();
+            var (dotnetExe, sdkPath) = FindNetCore();
 
-            if (string.IsNullOrEmpty(sdkPath))
+            if (!string.IsNullOrEmpty(dotnetExe))
             {
-                return ImmutableArray<(string, string, NuGetVersion)>.Empty;
-            }
+                var dictionary = new Dictionary<NuGetVersion, (string tfm, string name)>();
 
-            var versions = new List<(string name, string tfm, NuGetVersion version)>();
-
-            foreach (var directory in IOUtilities.EnumerateDirectories(sdkPath))
-            {
-                var versionName = Path.GetFileName(directory);
-                if (NuGetVersion.TryParse(versionName, out var version) && version.Major > 1)
+                foreach (var directory in IOUtilities.EnumerateDirectories(sdkPath))
                 {
-                    var name = version.Major < 5 ? ".NET Core" : ".NET";
-                    var tfm = version.Major < 5 ? $"netcoreapp{version.Major}.{version.Minor}" : $"net{version.Major}.{version.Minor}";
-                    versions.Add((name, tfm, version));
+                    var versionName = Path.GetFileName(directory);
+                    if (NuGetVersion.TryParse(versionName, out var version) && version.Major > 1)
+                    {
+                        dictionary.Add(version, ($"netcoreapp{version.Major}.{version.Minor}", versionName));
+                    }
                 }
+
+                return (dictionary.OrderBy(c => c.Key.IsPrerelease).ThenByDescending(c => c.Key).Select(c => c.Value).ToImmutableArray(),
+                        dotnetExe);
             }
 
-            return versions.OrderBy(c => c.version.IsPrerelease).ThenByDescending(c => c.version).ToImmutableArray();
+            return (ImmutableArray<(string, string)>.Empty, string.Empty);
         }
 
         private (string dotnetExe, string sdkPath) FindNetCore()
@@ -81,9 +85,9 @@ namespace RoslynPad
             }
 
             var sdkPath = (from path in dotnetPaths
-                           let fullPath = Path.Combine(path, "sdk")
-                           where Directory.Exists(fullPath)
-                           select fullPath).FirstOrDefault();
+                       let fullPath = Path.Combine(path, "sdk")
+                       where Directory.Exists(fullPath)
+                       select fullPath).FirstOrDefault();
 
             if (sdkPath != null)
             {
@@ -104,11 +108,6 @@ namespace RoslynPad
 
         private static string GetNetFrameworkName()
         {
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                return string.Empty;
-            }
-
             const string subkey = @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\";
 
             using (var ndpKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32).OpenSubKey(subkey))

@@ -44,20 +44,20 @@ namespace RoslynPad
 
         public string InitialDirectory
         {
-            get => _dialog.Directory ?? string.Empty;
+            get => _dialog.Directory;
             set => _dialog.Directory = value;
         }
 
         public string FileName
         {
-            get => _dialog.InitialFileName ?? string.Empty;
+            get => _dialog.InitialFileName;
             set => _dialog.InitialFileName = value;
         }
 
         public Task<string[]?> ShowAsync()
         {
             var active = (Application.Current.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows.First(w => w.IsActive);
-            return _dialog.ShowAsync(active!);
+            return _dialog.ShowAsync(active);
         }
     }
 }

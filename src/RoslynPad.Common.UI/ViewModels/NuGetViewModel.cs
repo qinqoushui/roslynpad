@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
+using System.IO;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -39,7 +40,7 @@ namespace RoslynPad.UI
             try
             {
                 var settings = LoadSettings();
-                ConfigPath = settings.GetConfigFilePaths().First();
+                ConfigPath = settings.ConfigFilePath;
                 GlobalPackageFolder = SettingsUtility.GetGlobalPackagesFolder(settings);
 
                 DefaultCredentialServiceUtility.SetupDefaultCredentialService(NullLogger.Instance, nonInteractive: false);
@@ -123,7 +124,7 @@ namespace RoslynPad.UI
 
         async Task<IReadOnlyList<INuGetPackage>> INuGetCompletionProvider.SearchPackagesAsync(string searchString, bool exactMatch, CancellationToken cancellationToken)
         {
-            var packages = await GetPackagesAsync(searchString, includePrerelease: true, exactMatch, cancellationToken).ConfigureAwait(false);
+            var packages = await GetPackagesAsync(searchString, includePrerelease: true, exactMatch, cancellationToken);
             return packages;
         }
 
@@ -136,7 +137,7 @@ namespace RoslynPad.UI
 
             // There should only be one instance of the source repository for each package source.
             private static readonly ConcurrentDictionary<PackageSource, SourceRepository> _cachedSources
-                = new();
+                = new ConcurrentDictionary<PackageSource, SourceRepository>();
 
             public CommandLineSourceRepositoryProvider(IPackageSourceProvider packageSourceProvider)
             {
@@ -203,13 +204,8 @@ namespace RoslynPad.UI
             InstallPackageCommand = commands.Create<PackageData>(InstallPackage);
         }
 
-        private void InstallPackage(PackageData? package)
+        private void InstallPackage(PackageData package)
         {
-            if (package == null)
-            {
-                return;
-            }
-
             OnPackageInstalled(package);
         }
 
@@ -267,7 +263,7 @@ namespace RoslynPad.UI
             var cancellationToken = searchCts.Token;
             _searchCts = searchCts;
 
-            _ = Task.Run(() => PerformSearch(SearchTerm, cancellationToken), cancellationToken);
+            Task.Run(() => PerformSearch(SearchTerm, cancellationToken), cancellationToken);
         }
 
         private async Task PerformSearch(string searchTerm, CancellationToken cancellationToken)

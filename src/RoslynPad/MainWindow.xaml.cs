@@ -10,9 +10,8 @@ using System.Xml.Linq;
 using Avalon.Windows.Controls;
 using AvalonDock;
 using AvalonDock.Layout.Serialization;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using RoslynPad.UI;
+using RoslynPad.Utilities;
 
 namespace RoslynPad
 {
@@ -25,20 +24,18 @@ namespace RoslynPad
         private bool _isClosing;
         private bool _isClosed;
 
+#pragma warning disable CS8618 // Non-nullable field is uninitialized.
         public MainWindow()
+#pragma warning restore CS8618 // Non-nullable field is uninitialized.
         {
             Loaded += OnLoaded;
 
-            var services = new ServiceCollection();
-            services.AddLogging(l => l.AddSimpleConsole().AddDebug());
-
             var container = new ContainerConfiguration()
-                .WithProvider(new ServiceCollectionExportDescriptorProvider(services))
                 .WithAssembly(typeof(MainViewModelBase).Assembly)   // RoslynPad.Common.UI
                 .WithAssembly(typeof(MainWindow).Assembly);         // RoslynPad
             var locator = container.CreateContainer().GetExport<IServiceProvider>();
 
-            _viewModel = locator.GetRequiredService<MainViewModelBase>();
+            _viewModel = locator.GetService<MainViewModelBase>();
 
             DataContext = _viewModel;
             InitializeComponent();
@@ -78,6 +75,7 @@ namespace RoslynPad
                 }
 
                 _isClosed = true;
+                // ReSharper disable once UnusedVariable
                 var closeTask = Dispatcher.InvokeAsync(Close);
             }
             else
@@ -134,7 +132,7 @@ namespace RoslynPad
             var reader = new StringReader(layout);
             try
             {
-              //  serializer.Deserialize(reader);
+                serializer.Deserialize(reader);
             }
             catch
             {
@@ -173,12 +171,12 @@ namespace RoslynPad
             if (_viewModel.LastError == null) return;
 
             TaskDialog.ShowInline(this, "Unhandled Exception",
-                _viewModel.LastError.ToString(), string.Empty, TaskDialogButtons.Close);
+                _viewModel.LastError.ToAsyncString(), string.Empty, TaskDialogButtons.Close);
         }
 
         private void ViewUpdateClick(object sender, RoutedEventArgs e)
         {
-            _ = Task.Run(() => Process.Start(new ProcessStartInfo("https://roslynpad.net/") { UseShellExecute = true }));
+            Task.Run(() => Process.Start("https://roslynpad.net/"));
         }
     }
 }

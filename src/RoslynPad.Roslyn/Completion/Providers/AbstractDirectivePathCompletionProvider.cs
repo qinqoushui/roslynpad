@@ -7,19 +7,18 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.CodeAnalysis.Scripting;
 using Roslyn.Utilities;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.ErrorReporting;
 using System.Diagnostics;
-using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 namespace RoslynPad.Roslyn.Completion.Providers
 {
     internal abstract class AbstractDirectivePathCompletionProvider : CompletionProvider
     {
-        private static readonly char[] s_separators = PathUtilities.IsUnixLikePlatform
-            ? new[] { '/', ',' }
-            : new[] { '/', ',', '\\' };
+        protected static bool IsDirectorySeparator(char ch) =>
+             ch == '/' || (ch == '\\' && !PathUtilities.IsUnixLikePlatform);
 
         protected abstract bool TryGetStringLiteralToken(SyntaxTree tree, int position, out SyntaxToken stringLiteral, CancellationToken cancellationToken);
 
@@ -52,7 +51,7 @@ namespace RoslynPad.Roslyn.Completion.Providers
 
                 await ProvideCompletionsAsync(context, pathThroughLastSlash).ConfigureAwait(false);
             }
-            catch (Exception e) when (FatalError.ReportAndPropagateUnlessCanceled(e))
+            catch (Exception e) when (FatalError.ReportWithoutCrashUnlessCanceled(e))
             {
                 // nop
             }
@@ -119,7 +118,8 @@ namespace RoslynPad.Roslyn.Completion.Providers
             position = Math.Min(position, text.Length - 1);
 
             int index;
-            if ((index = text.LastIndexOfAny(s_separators, position)) >= 0)
+            if ((index = text.LastIndexOf('/', position)) >= 0 ||
+                !PathUtilities.IsUnixLikePlatform && (index = text.LastIndexOf('\\', position)) >= 0)
             {
                 return index + 1;
             }
@@ -129,44 +129,34 @@ namespace RoslynPad.Roslyn.Completion.Providers
 
         protected abstract Task ProvideCompletionsAsync(CompletionContext context, string pathThroughLastSlash);
 
-        protected static FileSystemCompletionHelper GetFileSystemCompletionHelper(
+        protected FileSystemCompletionHelper GetFileSystemCompletionHelper(
             Document document,
             Microsoft.CodeAnalysis.Glyph itemGlyph,
             ImmutableArray<string> extensions,
             CompletionItemRules completionRules)
         {
-            ImmutableArray<string> referenceSearchPaths;
-            string? baseDirectory;
-            if (document.Project.CompilationOptions?.MetadataReferenceResolver is RuntimeMetadataReferenceResolver resolver)
-            {
-                referenceSearchPaths = resolver.PathResolver.SearchPaths;
-                baseDirectory = resolver.PathResolver.BaseDirectory;
-            }
-            else
-            {
-                referenceSearchPaths = ImmutableArray<string>.Empty;
-                baseDirectory = null;
-            }
+            var serviceOpt = document.Project.Solution.Workspace.Services.GetService<IScriptEnvironmentService>();
+            var searchPaths = serviceOpt?.MetadataReferenceSearchPaths ?? ImmutableArray<string>.Empty;
 
             return new FileSystemCompletionHelper(
                 Microsoft.CodeAnalysis.Glyph.OpenFolder,
                 itemGlyph,
-                referenceSearchPaths,
-                GetBaseDirectory(document, baseDirectory),
+                searchPaths,
+                GetBaseDirectory(document, serviceOpt),
                 extensions,
                 completionRules);
         }
 
-        private static string GetBaseDirectory(Document document, string? baseDirectory)
+        private static string GetBaseDirectory(Document document, IScriptEnvironmentService? environmentOpt)
         {
             var result = PathUtilities.GetDirectoryName(document.FilePath);
             if (!PathUtilities.IsAbsolute(result))
             {
-                result = baseDirectory;
+                result = environmentOpt?.BaseDirectory!;
                 Debug.Assert(result == null || PathUtilities.IsAbsolute(result));
             }
 
-            return result ?? string.Empty;
+            return result!;
         }
     }
 }

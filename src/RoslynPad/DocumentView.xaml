@@ -12,7 +12,7 @@
         <KeyBinding Key="F5"
                     Command="{Binding RunCommand, Mode=OneTime}" />
         <KeyBinding Gesture="Shift+F5"
-                    Command="{Binding TerminateCommand, Mode=OneTime}" />
+                    Command="{Binding RestartHostCommand, Mode=OneTime}" />
         <KeyBinding Gesture="Ctrl+S"
                     Command="{Binding SaveCommand, Mode=OneTime}" />
         <KeyBinding Gesture="Ctrl+D"
@@ -33,7 +33,7 @@
             </StatusBar.ItemsPanel>
             <StatusBarItem>
                 <TextBlock>
-                    Ln <Run Name="Ln" />
+                    Ln <Run Name="Ln" /> 
                     Col <Run Name="Col" />
                 </TextBlock>
             </StatusBarItem>
@@ -99,24 +99,19 @@
                 </Menu>
                 <Grid Visibility="{Binding HasReportedProgress, Converter={StaticResource BooleanToVisibilityConverter}}"
                       Width="60"
-                      Margin="5, 0">
-                    <ProgressBar Value="{Binding ReportedProgress, Mode=OneWay}"
+                      Margin="5, 0" >
+                    <ProgressBar Value="{Binding ReportedProgress, Mode=OneWay}" 
                                  Minimum="0.0"
                                  Maximum="1.0" />
                     <TextBlock Text="{Binding ReportedProgress, Mode=OneWay, Converter={StaticResource DoubleToPercentageTextConverter}}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
                 </Grid>
-                <Button Command="{Binding TerminateCommand, Mode=OneTime}"
-                        ToolTip="Terminate process (Shift+F5)"
-                        Content="{StaticResource Stop}"
-                        IsEnabled="{Binding IsRunning}" />
+                <Button Command="{Binding RestartHostCommand, Mode=OneTime}"
+                        ToolTip="Restart host process (Shift+F5)"
+                        Content="{StaticResource Restart}" />
                 <ComboBox ItemsSource="{Binding AvailablePlatforms, Mode=OneTime}"
-                          SelectedItem="{Binding Platform}"
-                          HorizontalContentAlignment="Stretch" />
-                <Button Content="{StaticResource SetPlatform}"
-                        ToolTip="Set platform as default"
-                        Command="{Binding SetDefaultPlatformCommand, Mode=OneTime}"  />
+                          SelectedItem="{Binding Platform}" />
                 <Separator />
                 <Button Command="{Binding SaveCommand, Mode=OneTime}"
                         ToolTip="Save (Ctrl+S)"
@@ -326,24 +321,12 @@
                                                ItemsSource="{Binding Results}"
                                                KeyDown="OnTreeViewKeyDown"
                                                MouseDoubleClick="OnTreeViewDoubleClick"
+                                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                                                VirtualizingPanel.IsVirtualizing="True"
                                                VirtualizingPanel.VirtualizationMode="Recycling"
                                                BorderBrush="#cccccc"
                                                ScrollViewer.ScrollChanged="ScrollViewer_OnScrollChanged"
                                                ContextMenuOpening="ResultTree_OnContextMenuOpening">
-                            <FrameworkElement.Style>
-                                <Style TargetType="controls:TreeListView">
-                                    <Setter Property="ScrollViewer.VerticalScrollBarVisibility"
-                                            Value="Hidden" />
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver"
-                                                 Value="True">
-                                            <Setter Property="ScrollViewer.VerticalScrollBarVisibility"
-                                                    Value="Auto" />
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </FrameworkElement.Style>
                             <FrameworkElement.CommandBindings>
                                 <CommandBinding Command="Copy"
                                                 Executed="CopyCommand" />
@@ -374,6 +357,7 @@
                             <ItemsControl.ItemContainerStyle>
                                 <Style TargetType="controls:TreeListViewItem"
                                        BasedOn="{StaticResource {x:Type controls:TreeListViewItem}}">
+                                    <!-- ReSharper disable once Xaml.BindingWithContextNotResolved -->
                                     <Setter Property="IsExpanded"
                                             Value="{Binding IsExpanded, Mode=OneTime}" />
                                     <EventSetter Event="KeyDown"

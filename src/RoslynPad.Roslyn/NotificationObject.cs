@@ -13,6 +13,7 @@ namespace RoslynPad.Roslyn
             if (!EqualityComparer<T>.Default.Equals(field, value))
             {
                 field = value;
+                // ReSharper disable once ExplicitCallerInfoArgument
                 OnPropertyChanged(propertyName);
                 return true;
             }

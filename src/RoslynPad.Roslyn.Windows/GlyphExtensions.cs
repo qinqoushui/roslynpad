@@ -6,7 +6,7 @@ namespace RoslynPad.Roslyn
 {
     public static class GlyphExtensions
     {
-        private static readonly GlyphService _service = new();
+        private static readonly GlyphService _service = new GlyphService();
 
         public static ImageSource? ToImageSource(this Glyph glyph) => _service.GetGlyphImage(glyph);
 

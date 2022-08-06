@@ -150,7 +150,7 @@ namespace RoslynPad.Roslyn.LanguageServices.PickMembers
 
         public object ViewModel
         {
-            get => DataContext ?? throw new InvalidOperationException("DataContext is null");
+            get => DataContext;
             set
             {
                 _viewModel = (PickMembersDialogViewModel)value;

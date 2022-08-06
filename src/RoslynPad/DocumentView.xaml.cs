@@ -13,9 +13,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 using RoslynPad.Controls;
 using RoslynPad.Editor;
-using RoslynPad.Build;
+using RoslynPad.Runtime;
 using RoslynPad.UI;
-using System.Windows.Data;
 
 namespace RoslynPad
 {
@@ -36,15 +35,11 @@ namespace RoslynPad
             Editor.TextArea.LeftMargins.Insert(0, _errorMargin);
             Editor.PreviewMouseWheel += EditorOnPreviewMouseWheel;
             Editor.TextArea.Caret.PositionChanged += CaretOnPositionChanged;
-            Editor.TextArea.SelectionChanged += EditorSelectionChanged;
 
             _syncContext = SynchronizationContext.Current;
 
             DataContextChanged += OnDataContextChanged;
         }
-
-        private void EditorSelectionChanged(object? sender, EventArgs e) 
-            => _viewModel.SelectedText = Editor.SelectedText;
 
         private void CaretOnPositionChanged(object? sender, EventArgs eventArgs)
         {
@@ -68,8 +63,6 @@ namespace RoslynPad
         private async void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs args)
         {
             _viewModel = (OpenDocumentViewModel)args.NewValue;
-            BindingOperations.EnableCollectionSynchronization(_viewModel.Results, _viewModel.Results);
-
             _viewModel.ResultsAvailable += ResultsAvailable;
             _viewModel.ReadInput += OnReadInput;
             _viewModel.NuGet.PackageInstalled += NuGetOnPackageInstalled;
@@ -80,10 +73,10 @@ namespace RoslynPad
             _viewModel.MainViewModel.EditorFontSizeChanged += OnEditorFontSizeChanged;
             Editor.FontSize = _viewModel.MainViewModel.EditorFontSize;
 
-            var documentText = await _viewModel.LoadTextAsync().ConfigureAwait(true);
+            var documentText = await _viewModel.LoadText().ConfigureAwait(true);
 
             var documentId = Editor.Initialize(_viewModel.MainViewModel.RoslynHost, new ClassificationHighlightColors(),
-                _viewModel.WorkingDirectory, documentText, _viewModel.SourceCodeKind);
+                _viewModel.WorkingDirectory, documentText);
 
             _viewModel.Initialize(documentId, OnError,
                 () => new TextSpan(Editor.SelectionStart, Editor.SelectionLength),
@@ -146,9 +139,9 @@ namespace RoslynPad
 
         private void NuGetOnPackageInstalled(PackageData package)
         {
-            _ = Dispatcher.InvokeAsync(() =>
+            Dispatcher.InvokeAsync(() =>
             {
-                var text = $"#r \"nuget: {package.Id}, {package.Version}\"{Environment.NewLine}";
+                var text = $"#r \"nuget:{package.Id}/{package.Version}\"{Environment.NewLine}";
                 Editor.Document.Insert(0, text, AnchorMovementType.Default);
             });
         }
@@ -171,7 +164,7 @@ namespace RoslynPad
 
         private void Editor_OnLoaded(object sender, RoutedEventArgs e)
         {
-            _ = Dispatcher.InvokeAsync(() => Editor.Focus(), System.Windows.Threading.DispatcherPriority.Background);
+            Dispatcher.InvokeAsync(() => Editor.Focus(), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         public void Dispose()
@@ -215,7 +208,7 @@ namespace RoslynPad
             Editor.TextArea.Caret.Column = result.Column;
             Editor.ScrollToLine(result.Line);
 
-            _ = Dispatcher.InvokeAsync(() => Editor.Focus());
+            Dispatcher.InvokeAsync(() => Editor.Focus());
         }
 
         private void CopyCommand(object sender, ExecutedRoutedEventArgs e)
@@ -249,7 +242,7 @@ namespace RoslynPad
         private void CopyAllResultsToClipboard(bool withChildren)
         {
             var builder = new StringBuilder();
-            foreach (var result in _viewModel.Results)
+            foreach (var result in _viewModel.ResultsInternal)
             {
                 if (withChildren)
                 {

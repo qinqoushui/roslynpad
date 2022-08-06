@@ -13,10 +13,9 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.CodeAnalysis.CSharp.Scripting.Hosting;
 using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.CodeAnalysis.CSharp.Scripting.Hosting;
 using Microsoft.CodeAnalysis.Scripting.Hosting;
-
 
 namespace RoslynPadReplSample
 {
@@ -45,11 +44,11 @@ namespace RoslynPadReplSample
             {
                 Assembly.Load("RoslynPad.Roslyn.Windows"),
                 Assembly.Load("RoslynPad.Editor.Windows")
-            }, RoslynHostReferences.NamespaceDefault.With(assemblyReferences:new[]
-            {
-                typeof(object).Assembly,
-                typeof(System.Text.RegularExpressions.Regex).Assembly,
-                typeof(System.Linq.Enumerable).Assembly,
+            }, RoslynHostReferences.NamespaceDefault.With(new[]
+            { 
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.Text.RegularExpressions.Regex).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(System.Linq.Enumerable).Assembly.Location),
             }));
 
             AddNewDocument();
@@ -235,6 +234,7 @@ namespace RoslynPadReplSample
                 if (!EqualityComparer<T>.Default.Equals(field, value))
                 {
                     field = value;
+                    // ReSharper disable once ExplicitCallerInfoArgument
                     OnPropertyChanged(propertyName);
                     return true;
                 }

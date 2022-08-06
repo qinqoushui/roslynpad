@@ -6,7 +6,7 @@ namespace RoslynPad.Editor
     public static class CommonProperty
     {
         public static StyledProperty<TValue> Register<TOwner, TValue>(string name,
-            TValue defaultValue = default!, PropertyOptions options = PropertyOptions.None,
+            TValue defaultValue = default, PropertyOptions options = PropertyOptions.None,
             Action<TOwner, CommonPropertyChangedArgs<TValue>>? onChanged = null)
             where TOwner : DependencyObject
         {
@@ -67,7 +67,7 @@ namespace RoslynPad.Editor
         }
 
         public StyledProperty<TValue> AddOwner<TOwner>() =>
-            new(Property.AddOwner(typeof(TOwner)));
+            new StyledProperty<TValue>(Property.AddOwner(typeof(TOwner)));
 
         public Type PropertyType => Property.PropertyType;
     }

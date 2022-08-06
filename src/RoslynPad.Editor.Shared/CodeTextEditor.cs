@@ -125,7 +125,8 @@ namespace RoslynPad.Editor
                 var mode = e.HasModifiers(ModifierKeys.Shift)
                     ? TriggerMode.SignatureHelp
                     : TriggerMode.Completion;
-                _ = ShowCompletion(mode);
+                // ReSharper disable once UnusedVariable
+                var task = ShowCompletion(mode);
             }
         }
 
@@ -268,7 +269,8 @@ namespace RoslynPad.Editor
 
         private void OnTextEntered(object sender, TextCompositionEventArgs e)
         {
-            _ = ShowCompletion(TriggerMode.Text);
+            // ReSharper disable once UnusedVariable
+            var task = ShowCompletion(TriggerMode.Text);
         }
 
         private async Task ShowCompletion(TriggerMode triggerMode)
@@ -357,7 +359,7 @@ namespace RoslynPad.Editor
 
         private void OnTextEntering(object sender, TextCompositionEventArgs args)
         {
-            if (args.Text?.Length > 0 && _completionWindow != null)
+            if (args.Text.Length > 0 && _completionWindow != null)
             {
                 if (!IsCharIdentifier(args.Text[0]))
                 {
@@ -435,6 +437,7 @@ namespace RoslynPad.Editor
                 }
             }
 
+            // ReSharper disable once MemberCanBePrivate.Local
             public bool UseHardSelection { get; set; }
         }
     }

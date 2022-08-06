@@ -4,12 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:roslynPad="clr-namespace:RoslynPad"
-        xmlns:roslyn="clr-namespace:Microsoft.CodeAnalysis;assembly=Microsoft.CodeAnalysis"
         xmlns:dock="https://github.com/Dirkster99/AvalonDock"
         xmlns:av="http://schemas.codeplex.com/wpfcontrib/xaml/presentation"
         xmlns:ui="clr-namespace:RoslynPad.UI;assembly=RoslynPad.Common.UI"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance ui:MainViewModelBase}"
+        d:DataContext="{d:DesignInstance ui:MainViewModel}"
         TextOptions.TextFormattingMode="Display"
         UseLayoutRounding="True"
         Title="{Binding WindowTitle, Mode=OneTime}"
@@ -19,11 +18,7 @@
 
     <FrameworkElement.InputBindings>
         <KeyBinding Gesture="Ctrl+N"
-                    Command="{Binding NewDocumentCommand, Mode=OneTime}"
-                    CommandParameter="{x:Static roslyn:SourceCodeKind.Regular}" />
-        <KeyBinding Gesture="Ctrl+Shift+N"
-                    Command="{Binding NewDocumentCommand, Mode=OneTime}"
-                    CommandParameter="{x:Static roslyn:SourceCodeKind.Script}" />
+                    Command="{Binding NewDocumentCommand, Mode=OneTime}" />
         <KeyBinding Gesture="Ctrl+O"
                     Command="{Binding OpenFileCommand, Mode=OneTime}" />
         <KeyBinding Gesture="Ctrl+W"
@@ -89,11 +84,6 @@
                             <TextBlock Text="{Binding Content.Title}" />
                         </DataTemplate>
                     </dock:DockingManager.DocumentPaneMenuItemHeaderTemplate>
-                    <dock:DockingManager.LayoutItemContainerStyle>
-                        <Style TargetType="{x:Type dock:LayoutItem}">
-                            <Setter Property="Title" Value="{Binding Model.Title}"/>
-                        </Style>
-                    </dock:DockingManager.LayoutItemContainerStyle>
                     <dock:LayoutRoot>
                         <dock:LayoutPanel Orientation="Horizontal">
                             <dock:LayoutAnchorablePane Name="Documents"
@@ -104,69 +94,33 @@
                                                        CanFloat="False"
                                                        CanAutoHide="True"
                                                        AutoHideWidth="200"
-                                                       Title="Documents2">
+                                                       Title="Documents">
                                     <DockPanel x:Name="DocumentTree">
                                         <AdornerDecorator>
                                             <roslynPad:DocumentTreeView />
                                         </AdornerDecorator>
                                     </DockPanel>
-                                     
-                                </dock:LayoutAnchorable>
-                                <dock:LayoutAnchorable x:Name="ServersPane"
-                                                       CanHide="False"
-                                                       CanClose="False"
-                                                       CanFloat="False"
-                                                       CanAutoHide="True"
-                                                       AutoHideWidth="200"
-                                                       Title="Servers">
-                                    <DockPanel x:Name="ServersTree">
-                                        <TextBox />
-                                    </DockPanel>
-
                                 </dock:LayoutAnchorable>
                             </dock:LayoutAnchorablePane>
-                            
                             <dock:LayoutDocumentPane />
                         </dock:LayoutPanel>
                     </dock:LayoutRoot>
                 </dock:DockingManager>
 
-                <UniformGrid HorizontalAlignment="Center"
-                             VerticalAlignment="Center"
-                             Rows="1"
-                             Visibility="{Binding HasNoOpenDocuments, Converter={StaticResource BooleanToVisibilityConverter}}">
-
-                    <Button Padding="5"
-                            Margin="20 0 0 0"
-                            Background="Transparent"
-                            Command="{Binding NewDocumentCommand}"
-                            CommandParameter="{x:Static roslyn:SourceCodeKind.Regular}">
-                        <StackPanel>
-                            <Image Source="{StaticResource CsFile}"
-                                   Width="64"
-                                   Height="64" />
-                            <TextBlock Text="New&#xA;(Ctrl+N)"
-                                       TextAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                    <Button Padding="5"
-                            Margin="20 0 0 0"
-                            Background="Transparent"
-                            Command="{Binding NewDocumentCommand}"
-                            CommandParameter="{x:Static roslyn:SourceCodeKind.Script}">
-                        <StackPanel>
-                            <Image Source="{StaticResource CsFile}"
-                                   Width="64"
-                                   Height="64" />
-                            <TextBlock Text="New Script&#xA;(Ctrl+Shift+N)"
-                                       TextAlignment="Center"
-                                       HorizontalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
-
-                </UniformGrid>
+                <Button HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Padding="5"
+                        Background="Transparent"
+                        Command="{Binding NewDocumentCommand}"
+                        Visibility="{Binding HasNoOpenDocuments, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <Image Source="{StaticResource CsFile}"
+                               Width="64"
+                               Height="64" />
+                        <TextBlock Text="New (Ctrl+N)"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Button>
 
                 <StackPanel Orientation="Horizontal"
                             HorizontalAlignment="Right"

@@ -11,8 +11,9 @@ using Avalonia;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Input;
-using ImageSource = Avalonia.Media.IImage;
+using ImageSource = Avalonia.Media.Drawing;
 using ModifierKeys = Avalonia.Input.KeyModifiers;
+using TextCompositionEventArgs = Avalonia.Input.TextInputEventArgs;
 using RoutingStrategy = Avalonia.Interactivity.RoutingStrategies;
 #else
 using System.Windows;
@@ -82,7 +83,7 @@ namespace RoslynPad.Editor
             RaiseEvent(e);
         }
 
-        public DocumentId Initialize(IRoslynHost roslynHost, IClassificationHighlightColors highlightColors, string workingDirectory, string documentText, SourceCodeKind sourceCodeKind)
+        public DocumentId Initialize(IRoslynHost roslynHost, IClassificationHighlightColors highlightColors, string workingDirectory, string documentText)
         {
             _roslynHost = roslynHost ?? throw new ArgumentNullException(nameof(roslynHost));
             _classificationHighlightColors = highlightColors ?? throw new ArgumentNullException(nameof(highlightColors));
@@ -98,7 +99,7 @@ namespace RoslynPad.Editor
             OnCreatingDocument(creatingDocumentArgs);
 
             _documentId = creatingDocumentArgs.DocumentId ??
-                roslynHost.AddDocument(new DocumentCreationArgs(avalonEditTextContainer, workingDirectory, sourceCodeKind,
+                roslynHost.AddDocument(new DocumentCreationArgs(avalonEditTextContainer, workingDirectory,
                     args => ProcessDiagnostics(args), text => avalonEditTextContainer.UpdateText(text)));
 
             AppendText(documentText);
@@ -141,10 +142,7 @@ namespace RoslynPad.Editor
 
             _braceMatchingCts?.Cancel();
 
-            if (_braceMatchingService == null)
-            {
-                return;
-            }
+            if (_braceMatchingService == null) return;
 
             var cts = new CancellationTokenSource();
             var token = cts.Token;
@@ -156,20 +154,12 @@ namespace RoslynPad.Editor
                 return;
             }
 
-            try
+            var text = await document.GetTextAsync().ConfigureAwait(false);
+            var caretOffset = CaretOffset;
+            if (caretOffset <= text.Length)
             {
-                var text = await document.GetTextAsync(token).ConfigureAwait(false);
-                var caretOffset = CaretOffset;
-                if (caretOffset <= text.Length)
-                {
-                    var result = await _braceMatchingService.GetAllMatchingBracesAsync(document, caretOffset, token).ConfigureAwait(true);
-                    _braceMatcherHighlighter.SetHighlight(result.leftOfPosition, result.rightOfPosition);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Caret moved again, we do nothing because execution stopped before propagating stale data
-                // while fresh data is being applied in a different `CaretOnPositionChanged` handler which runs in parallel.
+                var result = await _braceMatchingService.GetAllMatchingBracesAsync(document, caretOffset, token).ConfigureAwait(true);
+                _braceMatcherHighlighter.SetHighlight(result.leftOfPosition, result.rightOfPosition);
             }
         }
 
@@ -272,13 +262,17 @@ namespace RoslynPad.Editor
 
         private static Color GetDiagnosticsColor(DiagnosticData diagnosticData)
         {
-            return diagnosticData.Severity switch
+            switch (diagnosticData.Severity)
             {
-                DiagnosticSeverity.Info => Colors.LimeGreen,
-                DiagnosticSeverity.Warning => Colors.DodgerBlue,
-                DiagnosticSeverity.Error => Colors.Red,
-                _ => throw new ArgumentOutOfRangeException(nameof(diagnosticData)),
-            };
+                case DiagnosticSeverity.Info:
+                    return Colors.LimeGreen;
+                case DiagnosticSeverity.Warning:
+                    return Colors.DodgerBlue;
+                case DiagnosticSeverity.Error:
+                    return Colors.Red;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(diagnosticData));
+            }
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

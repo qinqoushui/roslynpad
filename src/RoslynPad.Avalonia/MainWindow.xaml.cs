@@ -6,8 +6,6 @@ using System;
 using System.Composition.Hosting;
 using System.Reflection;
 using Avalonia.Controls.Primitives;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace RoslynPad
 {
@@ -17,16 +15,12 @@ namespace RoslynPad
 
         public MainWindow()
         {
-            var services = new ServiceCollection();
-            services.AddLogging(l => l.AddSimpleConsole().AddDebug());
-
             var container = new ContainerConfiguration()
-                .WithProvider(new ServiceCollectionExportDescriptorProvider(services))
                 .WithAssembly(Assembly.Load(new AssemblyName("RoslynPad.Common.UI")))
                 .WithAssembly(Assembly.GetEntryAssembly());
             var locator = container.CreateContainer().GetExport<IServiceProvider>();
 
-            _viewModel = locator.GetRequiredService<MainViewModelBase>();
+            _viewModel = locator.GetService<MainViewModelBase>();
             
             DataContext = _viewModel;
 
@@ -36,11 +30,13 @@ namespace RoslynPad
             }
 
             AvaloniaXamlLoader.Load(this);
+
+            this.AttachDevTools();
         }
 
-        protected override async void OnApplyTemplate(TemplateAppliedEventArgs e)
+        protected override async void OnTemplateApplied(TemplateAppliedEventArgs e)
         {
-            base.OnApplyTemplate(e);
+            base.OnTemplateApplied(e);
             
             await _viewModel.Initialize().ConfigureAwait(true);
         }

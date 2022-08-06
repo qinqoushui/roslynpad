@@ -29,7 +29,7 @@ namespace RoslynPad.Roslyn.BraceMatching
             var text = await document.GetTextAsync(cancellationToken).ConfigureAwait(false);
             if (position < 0 || position > text.Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(position));
+                throw new ArgumentException(nameof(position));
             }
 
             var matchers = _braceMatchers.Where(b => b.Metadata.Language == document.Project.Language);

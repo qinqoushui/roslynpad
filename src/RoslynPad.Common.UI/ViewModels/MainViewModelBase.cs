@@ -9,9 +9,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Microsoft.Extensions.DependencyInjection;
 using NuGet.Packaging;
-using RoslynPad.Build;
 using RoslynPad.Roslyn;
 using RoslynPad.Utilities;
 
@@ -19,14 +17,14 @@ namespace RoslynPad.UI
 {
     public class MainViewModelBase : NotificationObject
     {
-        private static readonly Version s_currentVersion = new(16, 0);
-        private static readonly string s_currentVersionVariant = "";
-
         private readonly IServiceProvider _serviceProvider;
         private readonly ITelemetryProvider _telemetryProvider;
         private readonly ICommandProvider _commands;
         private readonly DocumentFileWatcher _documentFileWatcher;
+        private static readonly Version _currentVersion = new Version(15, 1);
+        private static readonly string _currentVersionVariant = "";
 
+        public const string NuGetPathVariableName = "$NuGet";
 
         private OpenDocumentViewModel? _currentOpenDocument;
         private bool _hasUpdate;
@@ -37,14 +35,12 @@ namespace RoslynPad.UI
         private DocumentViewModel _documentRoot;
         private DocumentWatcher _documentWatcher;
 
-        public IApplicationSettingsValues Settings { get; }
-
+        public IApplicationSettings Settings { get; }
         public DocumentViewModel DocumentRoot
         {
             get => _documentRoot;
             private set => SetProperty(ref _documentRoot, value);
         }
-
         public RoslynHost RoslynHost { get; private set; }
 
         public bool IsInitialized
@@ -67,9 +63,9 @@ namespace RoslynPad.UI
             _documentFileWatcher = documentFileWatcher;
 
             settings.LoadDefault();
-            Settings = settings.Values;
+            Settings = settings;
 
-            _telemetryProvider.Initialize(s_currentVersion.ToString(), settings);
+            _telemetryProvider.Initialize(_currentVersion.ToString(), settings);
             _telemetryProvider.LastErrorChanged += () =>
             {
                 OnPropertyChanged(nameof(LastError));
@@ -78,14 +74,14 @@ namespace RoslynPad.UI
 
             NuGet = nugetViewModel;
 
-            NewDocumentCommand = commands.Create<SourceCodeKind>(CreateNewDocument);
+            NewDocumentCommand = commands.Create(CreateNewDocument);
             OpenFileCommand = commands.CreateAsync(OpenFile);
             CloseCurrentDocumentCommand = commands.CreateAsync(CloseCurrentDocument);
             CloseDocumentCommand = commands.CreateAsync<OpenDocumentViewModel>(CloseDocument);
             ClearErrorCommand = commands.Create(() => _telemetryProvider.ClearLastError());
             ReportProblemCommand = commands.Create(ReportProblem);
             EditUserDocumentPathCommand = commands.Create(EditUserDocumentPath);
-            ToggleOptimizationCommand = commands.Create(() => Settings.OptimizeCompilation = !Settings.OptimizeCompilation);
+            ToggleOptimizationCommand = commands.Create(() => settings.OptimizeCompilation = !settings.OptimizeCompilation);
 
             _editorFontSize = Settings.EditorFontSize;
 
@@ -117,8 +113,8 @@ namespace RoslynPad.UI
         private async Task InitializeInternal()
         {
             RoslynHost = await Task.Run(() => new RoslynHost(CompositionAssemblies,
-                RoslynHostReferences.NamespaceDefault.With(imports: new[] { "RoslynPad.Runtime" }),
-                disabledDiagnostics: ImmutableArray.Create("CS1701", "CS1702", "CS7011", "CS8097")))
+                RoslynHostReferences.NamespaceDefault.With(typeNamespaceImports: new[] { typeof(Runtime.ObjectExtensions) }),
+                disabledDiagnostics: ImmutableArray.Create("CS1701", "CS1702")))
                 .ConfigureAwait(true);
 
             OpenDocumentFromCommandLine();
@@ -130,6 +126,7 @@ namespace RoslynPad.UI
             }
             else
             {
+                // ReSharper disable once UnusedVariable
                 var task = Task.Run(CheckForUpdates);
             }
         }
@@ -168,15 +165,13 @@ namespace RoslynPad.UI
 
         private IEnumerable<OpenDocumentViewModel> LoadAutoSavedDocuments(string root)
         {
-            return IOUtilities.EnumerateFilesRecursive(root, $"*{DocumentViewModel.AutoSaveSuffix}.*")
-                .Select(d => DocumentViewModel.FromPath(d))
-                .Where(d => IsRelevantDocument(d))
-                .Select(d => GetOpenDocumentViewModel(d));
+            return IOUtilities.EnumerateFilesRecursive(root, DocumentViewModel.GetAutoSaveName("*")).Select(x =>
+                GetOpenDocumentViewModel(DocumentViewModel.FromPath(x)));
         }
 
         private OpenDocumentViewModel GetOpenDocumentViewModel(DocumentViewModel? documentViewModel = null)
         {
-            var d = _serviceProvider.GetRequiredService<OpenDocumentViewModel>();
+            var d = _serviceProvider.GetService<OpenDocumentViewModel>();
             d.SetDocument(documentViewModel);
             return d;
         }
@@ -185,13 +180,13 @@ namespace RoslynPad.UI
         {
             get
             {
-                var currentVersion = s_currentVersion.Minor <= 0 && s_currentVersion.Build <= 0
-                    ? s_currentVersion.Major.ToString()
-                    : s_currentVersion.ToString();
+                var currentVersion = _currentVersion.Minor <= 0 && _currentVersion.Build <= 0
+                    ? _currentVersion.Major.ToString()
+                    : _currentVersion.ToString();
                 var title = "RoslynPad " + currentVersion;
-                if (!string.IsNullOrEmpty(s_currentVersionVariant))
+                if (!string.IsNullOrEmpty(_currentVersionVariant))
                 {
-                    title += "-" + s_currentVersionVariant;
+                    title += "-" + _currentVersionVariant;
                 }
                 return title;
             }
@@ -199,12 +194,7 @@ namespace RoslynPad.UI
 
         private static void ReportProblem()
         {
-            _ = Task.Run(() => Process.Start(
-                new ProcessStartInfo
-                {
-                    FileName = "https://github.com/aelij/RoslynPad/issues",
-                    UseShellExecute = true,
-                }));
+            Task.Run(() => Process.Start("https://github.com/aelij/RoslynPad/issues"));
         }
 
         public bool HasUpdate
@@ -215,7 +205,7 @@ namespace RoslynPad.UI
         private bool HasCachedUpdate()
         {
             return Version.TryParse(Settings.LatestVersion, out var latestVersion) &&
-                   latestVersion > s_currentVersion;
+                   latestVersion > _currentVersion;
         }
 
         private async Task CheckForUpdates()
@@ -235,7 +225,7 @@ namespace RoslynPad.UI
 
             if (Version.TryParse(latestVersionString, out var latestVersion))
             {
-                if (latestVersion > s_currentVersion)
+                if (latestVersion > _currentVersion)
                 {
                     HasUpdate = true;
                 }
@@ -253,7 +243,7 @@ namespace RoslynPad.UI
 
         public void EditUserDocumentPath()
         {
-            var dialog = _serviceProvider.GetRequiredService<IFolderBrowserDialog>();
+            var dialog = _serviceProvider.GetService<IFolderBrowserDialog>();
             dialog.ShowEditBox = true;
             dialog.SelectedPath = Settings.EffectiveDocumentPath;
 
@@ -290,7 +280,7 @@ namespace RoslynPad.UI
             OnPropertyChanged(nameof(CurrentOpenDocument));
         }
 
-        public IDelegateCommand<SourceCodeKind> NewDocumentCommand { get; }
+        public IDelegateCommand NewDocumentCommand { get; }
 
         public IDelegateCommand OpenFileCommand { get; }
 
@@ -320,8 +310,8 @@ namespace RoslynPad.UI
         {
             if (!IsInitialized) return;
 
-            var dialog = _serviceProvider.GetRequiredService<IOpenFileDialog>();
-            dialog.Filter = new FileDialogFilter("C# Files", "cs", "csx");
+            var dialog = _serviceProvider.GetService<IOpenFileDialog>();
+            dialog.Filter = new FileDialogFilter("C# Scripts", "csx");
             var fileNames = await dialog.ShowAsync().ConfigureAwait(true);
             if (fileNames == null)
             {
@@ -343,22 +333,21 @@ namespace RoslynPad.UI
             OpenDocument(document);
         }
 
-        public void CreateNewDocument(SourceCodeKind kind = SourceCodeKind.Regular)
+        public void CreateNewDocument()
         {
-            var openDocument = GetOpenDocumentViewModel();
-            openDocument.SourceCodeKind = kind;
+            var openDocument = GetOpenDocumentViewModel(null);
             OpenDocuments.Add(openDocument);
             CurrentOpenDocument = openDocument;
         }
 
-        public async Task CloseDocument(OpenDocumentViewModel? document)
+        public async Task CloseDocument(OpenDocumentViewModel document)
         {
             if (document == null)
             {
                 return;
             }
 
-            var result = await document.SaveAsync(promptSave: true).ConfigureAwait(true);
+            var result = await document.Save(promptSave: true).ConfigureAwait(true);
             if (result == SaveResult.Cancel)
             {
                 return;
@@ -377,7 +366,7 @@ namespace RoslynPad.UI
         {
             foreach (var document in OpenDocuments)
             {
-                await document.AutoSaveAsync().ConfigureAwait(false);
+                await document.AutoSave().ConfigureAwait(false);
             }
         }
 
@@ -534,7 +523,7 @@ namespace RoslynPad.UI
 
             bool SearchDocumentName(DocumentViewModel document)
             {
-                return document.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase);
+                return document.Name.IndexOf(SearchText!, StringComparison.OrdinalIgnoreCase) >= 0;
             }
 
             Regex? CreateSearchRegex()
@@ -579,7 +568,7 @@ namespace RoslynPad.UI
                     {
                         var lines = IOUtilities.ReadLines(document.Path);
                         document.IsSearchMatch = lines.Any(line =>
-                            line.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+                            line.IndexOf(SearchText!, StringComparison.OrdinalIgnoreCase) >= 0);
                     }).ConfigureAwait(false);
                 }
             }
@@ -654,7 +643,7 @@ namespace RoslynPad.UI
 
         private class DocumentWatcher : IDisposable
         {
-            private static readonly char[] s_pathSeparators = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+            private static readonly char[] PathSeparators = { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
 
             private readonly DocumentViewModel _documentRoot;
             private readonly IDisposable _subscription;
@@ -671,7 +660,7 @@ namespace RoslynPad.UI
             private void OnDocumentFileChanged(DocumentFileChanged data)
             {
                 var pathParts = data.Path.Substring(_documentRoot.Path.Length)
-                    .Split(s_pathSeparators, StringSplitOptions.RemoveEmptyEntries);
+                    .Split(PathSeparators, StringSplitOptions.RemoveEmptyEntries);
 
                 DocumentViewModel? current = _documentRoot;
 
@@ -732,12 +721,12 @@ namespace RoslynPad.UI
                     }
                 }
             }
-        }
 
-        private static bool IsRelevantDocument(DocumentViewModel document)
-        {
-            return document.IsFolder ||
-                DocumentViewModel.RelevantFileExtensions.Contains(Path.GetExtension(document.Name));
+            private static bool IsRelevantDocument(DocumentViewModel document)
+            {
+                return document.IsFolder || string.Equals(Path.GetExtension(document.OriginalName),
+                           DocumentViewModel.DefaultFileExtension, StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         #endregion

@@ -1,20 +1,18 @@
 using System;
-using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using RoslynPad.Build;
+using RoslynPad.Utilities;
 
 namespace RoslynPad.UI
 {
     [DebuggerDisplay("{Name}:{IsFolder}")]
     public class DocumentViewModel : NotificationObject
     {
+        internal const string DefaultFileExtension = ".csx";
         internal const string AutoSaveSuffix = ".autosave";
-        
-        public static ImmutableArray<string> RelevantFileExtensions { get; } = ImmutableArray.Create(".cs", ".csx");
 
         private bool _isExpanded;
         private bool? _isAutoSaveOnly;
@@ -22,6 +20,7 @@ namespace RoslynPad.UI
         private string _path;
         private string _name;
         private string? _orderByName;
+        private string _originalName;
 
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
         private DocumentViewModel(string rootPath, bool isFolder)
@@ -29,13 +28,10 @@ namespace RoslynPad.UI
         {
             Path = rootPath;
             IsFolder = isFolder;
-
-            var nameWithoutExtension = System.IO.Path.GetFileNameWithoutExtension(Name);
-            IsAutoSave = nameWithoutExtension.EndsWith(AutoSaveSuffix, StringComparison.OrdinalIgnoreCase);
+            IsAutoSave = Name.EndsWith(AutoSaveSuffix, StringComparison.OrdinalIgnoreCase);
             if (IsAutoSave)
             {
-                Name = nameWithoutExtension.Substring(0, nameWithoutExtension.Length - AutoSaveSuffix.Length) +
-                    System.IO.Path.GetExtension(Name);
+                Name = Name.Substring(0, Name.Length - AutoSaveSuffix.Length);
             }
 
             IsSearchMatch = true;
@@ -55,7 +51,7 @@ namespace RoslynPad.UI
                 var oldPath = _path;
                 if (SetProperty(ref _path, value))
                 {
-                    Name = System.IO.Path.GetFileName(value);
+                    OriginalName = System.IO.Path.GetFileName(value);
                     UpdateChildPaths(oldPath);
                 }
             }
@@ -77,7 +73,8 @@ namespace RoslynPad.UI
         public string GetSavePath()
         {
             return IsAutoSave
-                ? System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path)!, Name)
+                // ReSharper disable once AssignNullToNotNullAttribute
+                ? System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path)!, Name + DefaultFileExtension)
                 : Path;
         }
 
@@ -85,12 +82,13 @@ namespace RoslynPad.UI
         {
             return IsAutoSave ?
                 Path
+                // ReSharper disable once AssignNullToNotNullAttribute
                 : System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path)!, GetAutoSaveName(Name));
         }
 
         public static string GetAutoSaveName(string name)
         {
-            return System.IO.Path.ChangeExtension(name, AutoSaveSuffix + System.IO.Path.GetExtension(name));
+            return name + AutoSaveSuffix + DefaultFileExtension;
         }
 
         public static DocumentViewModel CreateRoot(string rootPath)
@@ -113,8 +111,15 @@ namespace RoslynPad.UI
             return document;
         }
 
-        public static string GetDocumentPathFromName(string path, string name) =>
-            System.IO.Path.Combine(path, name);
+        public static string GetDocumentPathFromName(string path, string name)
+        {
+            if (!name.EndsWith(DefaultFileExtension, StringComparison.OrdinalIgnoreCase))
+            {
+                name += DefaultFileExtension;
+            }
+
+            return System.IO.Path.Combine(path, name);
+        }
 
         public void DeleteAutoSave()
         {
@@ -138,6 +143,16 @@ namespace RoslynPad.UI
             set => SetProperty(ref _isExpanded, value);
         }
 
+        internal string OriginalName
+        {
+            get => _originalName;
+            private set
+            {
+                _originalName = value;
+                Name = IsFolder ? value : System.IO.Path.GetFileNameWithoutExtension(value);
+            }
+        }
+
         public string Name
         {
             get => _name;
@@ -146,9 +161,20 @@ namespace RoslynPad.UI
 
         public bool IsAutoSave { get; }
 
-        public bool IsAutoSaveOnly =>
-            _isAutoSaveOnly ??= IsAutoSave &&
-                !File.Exists(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path)!, Name));
+        public bool IsAutoSaveOnly
+        {
+            get
+            {
+                if (_isAutoSaveOnly == null)
+                {
+                    _isAutoSaveOnly = IsAutoSave &&
+                                      // ReSharper disable once AssignNullToNotNullAttribute
+                                      !File.Exists(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path)!, Name + DefaultFileExtension));
+                }
+
+                return _isAutoSaveOnly.Value;
+            }
+        }
 
         public bool IsChildrenInitialized => InternalChildren != null;
 
@@ -175,25 +201,28 @@ namespace RoslynPad.UI
 
         private DocumentCollection ReadChildren()
         {
-            var directories =
+            return new DocumentCollection(
                 IOUtilities.EnumerateDirectories(Path)
-                .Select(directory => new DocumentViewModel(directory, isFolder: true))
-                .OrderBy(directory => directory.OrderByName);
-
-            var files = Enumerable.Empty<DocumentViewModel>();
-
-            foreach (var extension in RelevantFileExtensions)
-            {
-                files = files.Concat(IOUtilities.EnumerateFiles(Path, "*" + extension)
-                    .Select(file => new DocumentViewModel(file, isFolder: false))
-                    .Where(file => !file.IsAutoSave));
-            }
-                    
-            return new DocumentCollection(directories.Concat(files.OrderBy(x => OrderByName)));
+                .Select(x => new DocumentViewModel(x, isFolder: true))
+                .OrderBy(x => x.OrderByName)
+                    .Concat(IOUtilities.EnumerateFiles(Path, "*" + DefaultFileExtension)
+                        .Select(x => new DocumentViewModel(x, isFolder: false))
+                        .Where(x => !x.IsAutoSave)
+                        .OrderBy(x => x.OrderByName)));
         }
 
-        private string OrderByName =>
-            _orderByName ??= Regex.Replace(Name, "[0-9]+", m => m.Value.PadLeft(100, '0'));
+        private string OrderByName
+        {
+            get
+            {
+                if (_orderByName == null)
+                {
+                    _orderByName = Regex.Replace(Name, "[0-9]+", m => m.Value.PadLeft(100, '0'));
+                }
+
+                return _orderByName;
+            }
+        }
 
         internal void AddChild(DocumentViewModel documentViewModel)
         {

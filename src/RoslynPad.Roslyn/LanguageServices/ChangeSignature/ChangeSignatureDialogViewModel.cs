@@ -17,7 +17,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
         private readonly List<ParameterViewModel> _parametersWithoutDefaultValues;
         private readonly List<ParameterViewModel> _parametersWithDefaultValues;
         private readonly ParameterViewModel? _paramsParameter;
-        private readonly HashSet<ParameterViewModel> _disabledParameters = new();
+        private readonly HashSet<IParameterSymbol> _disabledParameters = new HashSet<IParameterSymbol>();
         private readonly ImmutableArray<SymbolDisplayPart> _declarationParts;
 
         internal ChangeSignatureDialogViewModel(ParameterConfiguration parameters, ISymbol symbol)
@@ -31,7 +31,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
                 startingSelectedIndex++;
 
                 _thisParameter = new ParameterViewModel(this, parameters.ThisParameter);
-                _disabledParameters.Add(_thisParameter);
+                _disabledParameters.Add(parameters.ThisParameter.Symbol);
             }
 
             if (parameters.ParamsParameter != null)
@@ -39,7 +39,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
                 _paramsParameter = new ParameterViewModel(this, parameters.ParamsParameter);
             }
 
-            _declarationParts = symbol.ToDisplayParts(s_symbolDeclarationDisplayFormat);
+            _declarationParts = symbol.ToDisplayParts(_symbolDeclarationDisplayFormat);
 
             _parametersWithoutDefaultValues = parameters.ParametersWithoutDefaultValues.OfType<ExistingParameter>().Select(p => new ParameterViewModel(this, p)).ToList();
             _parametersWithDefaultValues = parameters.RemainingEditableParameters.OfType<ExistingParameter>().Select(p => new ParameterViewModel(this, p)).ToList();
@@ -129,7 +129,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
                 selectedIndex: -1);
         }
 
-        private static readonly SymbolDisplayFormat s_symbolDeclarationDisplayFormat = new(
+        private static readonly SymbolDisplayFormat _symbolDeclarationDisplayFormat = new SymbolDisplayFormat(
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             miscellaneousOptions: SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers | SymbolDisplayMiscellaneousOptions.UseSpecialTypes,
             extensionMethodStyle: SymbolDisplayExtensionMethodStyle.StaticMethod,
@@ -139,7 +139,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
                 SymbolDisplayMemberOptions.IncludeAccessibility |
                 SymbolDisplayMemberOptions.IncludeModifiers);
 
-        private static readonly SymbolDisplayFormat s_parameterDisplayFormat = new(
+        private static readonly SymbolDisplayFormat _parameterDisplayFormat = new SymbolDisplayFormat(
             genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
             miscellaneousOptions: SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers | SymbolDisplayMiscellaneousOptions.UseSpecialTypes,
             parameterOptions:
@@ -182,7 +182,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
                 }
 
                 first = false;
-                displayParts.AddRange(parameter.ParameterSymbol.ToDisplayParts(s_parameterDisplayFormat));
+                displayParts.AddRange(parameter.ParameterSymbol.ToDisplayParts(_parameterDisplayFormat));
             }
 
             displayParts.Add(new SymbolDisplayPart(SymbolDisplayPartKind.Punctuation, null, ")"));
@@ -291,7 +291,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
 
         private bool IsDisabled(ParameterViewModel parameterViewModel)
         {
-            return _disabledParameters.Contains(parameterViewModel);
+            return _disabledParameters.Contains(parameterViewModel.ParameterSymbol);
         }
 
         private IList<ParameterViewModel> GetSelectedGroup()
@@ -374,7 +374,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
                 }
             }
 
-            public string Type => ParameterSymbol.Type.ToDisplayString(s_parameterDisplayFormat);
+            public string Type => ParameterSymbol.Type.ToDisplayString(_parameterDisplayFormat);
 
             public string ParameterName => ParameterSymbol.Name;
 
@@ -391,7 +391,7 @@ namespace RoslynPad.Roslyn.LanguageServices.ChangeSignature
                         ? "null"
                         : ParameterSymbol.ExplicitDefaultValue is string
                             ? "\"" + ParameterSymbol.ExplicitDefaultValue + "\""
-                            : ParameterSymbol.ExplicitDefaultValue.ToString() ?? string.Empty;
+                            : ParameterSymbol.ExplicitDefaultValue.ToString();
                 }
             }
 
