@@ -20,6 +20,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Input;
 #endif
+using System.Linq;
 
 namespace RoslynPad.Editor
 {
@@ -236,7 +237,7 @@ namespace RoslynPad.Editor
             {
                 return;
             }
-
+            RawStringHelper.Instance.ParseRawString(Text, out var positions);
             foreach (var diagnosticData in args.Diagnostics)
             {
                 if (diagnosticData.Severity == DiagnosticSeverity.Hidden || diagnosticData.IsSuppressed)
@@ -249,7 +250,10 @@ namespace RoslynPad.Editor
                 {
                     continue;
                 }
-
+                if (positions != null && positions.Any(r=>r.s<=span.Value.Start && r.e>=span.Value.End-1) )
+                {
+                    continue;//跳过rawString的错误
+                }
                 var marker = _textMarkerService.TryCreate(span.Value.Start, span.Value.Length);
                 if (marker != null)
                 {

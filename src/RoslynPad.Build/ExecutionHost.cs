@@ -30,7 +30,7 @@ namespace RoslynPad.Build
     /// <summary>
     /// An <see cref="IExecutionHost"/> implementation that compiles scripts to disk as EXEs and executes them in their own process.
     /// </summary>
-    internal class ExecutionHost : IExecutionHost
+    internal partial class ExecutionHost : IExecutionHost
     {
         private static Lazy<string> CurrentPid { get; } = new Lazy<string>(() => Process.GetCurrentProcess().Id.ToString());
 
@@ -103,6 +103,7 @@ namespace RoslynPad.Build
             _initHostSyntax = ParseSyntaxTree(@"RoslynPad.Runtime.RuntimeInitializer.Initialize();", roslynHost.ParseOptions);
 
             MetadataReferences = ImmutableArray<MetadataReference>.Empty;
+            InitCodeParser();
         }
 
         private static void WriteJson(string path, JToken token)
@@ -338,6 +339,10 @@ namespace RoslynPad.Build
 
         private SyntaxTree ParseCode(string code)
         {
+            foreach (var f in CodeParsers)
+            {
+                code = f.Invoke(code);
+            }
             var tree = ParseSyntaxTree(code, _roslynHost.ParseOptions);
             var root = tree.GetRoot();
 

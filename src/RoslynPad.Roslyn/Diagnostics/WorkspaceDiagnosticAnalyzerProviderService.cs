@@ -3,6 +3,7 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.CodeAnalysis.Host;
+using System;
 
 namespace RoslynPad.Roslyn.Diagnostics
 {
@@ -22,7 +23,15 @@ namespace RoslynPad.Roslyn.Diagnostics
 
         protected override Assembly LoadFromPathImpl(string fullPath)
         {
-            return Assembly.Load(AssemblyName.GetAssemblyName(fullPath));
+            try
+            {
+                return Assembly.Load(AssemblyName.GetAssemblyName(fullPath));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return null;
+            }
         }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace RoslynPad.Utilities
 {
-    internal static class StringExtensions
+    public static class StringExtensions
     {
         public static string Join(this IEnumerable<string> source, string separator)
         {
@@ -12,5 +14,7 @@ namespace RoslynPad.Utilities
 
             return string.Join(separator, source);
         }
+
+       
     }
 }
