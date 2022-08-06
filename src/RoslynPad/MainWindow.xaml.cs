@@ -134,7 +134,7 @@ namespace RoslynPad
             var reader = new StringReader(layout);
             try
             {
-                serializer.Deserialize(reader);
+              //  serializer.Deserialize(reader);
             }
             catch
             {

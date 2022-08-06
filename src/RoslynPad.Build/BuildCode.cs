@@ -17,7 +17,6 @@ namespace RoslynPad.Build
                 public sealed class ModuleInitializerAttribute : Attribute { }
             }
         ";
-
         public const string ModuleInit = @"
             internal static class ModuleInitializer
             {
@@ -26,7 +25,7 @@ namespace RoslynPad.Build
                     RoslynPad.Runtime.RuntimeInitializer.Initialize();
             }
         ";
-
+ 
         public static GlobalStatementSyntax GetDumpCall(ExpressionStatementSyntax statement) =>
             GlobalStatement(
                 ExpressionStatement(

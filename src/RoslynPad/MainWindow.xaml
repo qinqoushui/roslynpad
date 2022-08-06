@@ -104,14 +104,28 @@
                                                        CanFloat="False"
                                                        CanAutoHide="True"
                                                        AutoHideWidth="200"
-                                                       Title="Documents">
+                                                       Title="Documents2">
                                     <DockPanel x:Name="DocumentTree">
                                         <AdornerDecorator>
                                             <roslynPad:DocumentTreeView />
                                         </AdornerDecorator>
                                     </DockPanel>
+                                     
+                                </dock:LayoutAnchorable>
+                                <dock:LayoutAnchorable x:Name="ServersPane"
+                                                       CanHide="False"
+                                                       CanClose="False"
+                                                       CanFloat="False"
+                                                       CanAutoHide="True"
+                                                       AutoHideWidth="200"
+                                                       Title="Servers">
+                                    <DockPanel x:Name="ServersTree">
+                                        <TextBox />
+                                    </DockPanel>
+
                                 </dock:LayoutAnchorable>
                             </dock:LayoutAnchorablePane>
+                            
                             <dock:LayoutDocumentPane />
                         </dock:LayoutPanel>
                     </dock:LayoutRoot>

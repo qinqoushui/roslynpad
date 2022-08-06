@@ -7,6 +7,8 @@
     <NoWarn>1701;1702</NoWarn>
     <Nullable>disable</Nullable>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <StartupObject>RoslynPadReplSample.App</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="RoslynPad.Editor.Windows" Version="1.2.0" />

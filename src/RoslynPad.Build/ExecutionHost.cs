@@ -123,12 +123,15 @@ namespace RoslynPad.Build
             _scriptInitSyntax = SyntaxFactory.ParseSyntaxTree(BuildCode.ScriptInit, roslynHost.ParseOptions.WithKind(SourceCodeKind.Script));
             var regularParseOptions = roslynHost.ParseOptions.WithKind(SourceCodeKind.Regular);
             _moduleInitAttributeSyntax = SyntaxFactory.ParseSyntaxTree(BuildCode.ModuleInitAttribute, regularParseOptions);
+            //_moduleInitAttributeSyntaxOld = SyntaxFactory.ParseSyntaxTree("RoslynPad.Runtime.RuntimeInitializer.Initialize(); ", regularParseOptions);
+
             _moduleInitSyntax = SyntaxFactory.ParseSyntaxTree(BuildCode.ModuleInit, regularParseOptions);
             _importsSyntax = SyntaxFactory.ParseSyntaxTree(GetGlobalUsings(), regularParseOptions);
 
             MetadataReferences = ImmutableArray<MetadataReference>.Empty;
 
-            _runtimeAssemblyLibraryRef = LibraryRef.Reference(Path.Combine(Path.GetDirectoryName(typeof(ExecutionHost).Assembly.Location)!, "RoslynPad.Runtime.dll"));
+            // _runtimeAssemblyLibraryRef = LibraryRef.Reference(Path.Combine(Path.GetDirectoryName(typeof(ExecutionHost).Assembly.Location)!, "RoslynPad.Runtime.dll"));
+            _runtimeAssemblyLibraryRef = LibraryRef.Reference(Path.Combine(AppContext.BaseDirectory, "RoslynPad.Runtime.dll"));
         }
 
         public event Action<IList<CompilationErrorResultObject>>? CompilationErrors;
@@ -266,7 +269,7 @@ namespace RoslynPad.Build
             }
             else
             {
-                if (Platform.FrameworkVersion?.Major < 5)
+                if ( !Platform.IsCore ||  Platform.FrameworkVersion?.Major < 5)
                 {
                     syntaxTrees = syntaxTrees.Add(_moduleInitAttributeSyntax);
                 }
