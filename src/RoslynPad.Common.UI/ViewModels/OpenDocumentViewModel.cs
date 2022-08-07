@@ -115,6 +115,12 @@ namespace RoslynPad.UI
             private set => SetProperty(ref _ilText, value);
         }
 
+        public string OutputText
+        {
+            get => _results == null ? string.Empty : string.Join("\r\n", _results.Select(r => r.Value).ToArray());
+            // private set =>SetProperty(re
+        }
+
         [ImportingConstructor]
         public OpenDocumentViewModel(IServiceProvider serviceProvider, MainViewModelBase mainViewModel, ICommandProvider commands, IAppDispatcher appDispatcher, ITelemetryProvider telemetryProvider)
         {
@@ -901,6 +907,7 @@ namespace RoslynPad.UI
         public bool HasReportedProgress => ReportedProgress.HasValue;
 
         public bool ShowIL { get; set; }
+        public bool ShowOutput { get; set; }
 
         public event EventHandler? EditorFocus;
 
