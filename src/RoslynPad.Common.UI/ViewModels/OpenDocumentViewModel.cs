@@ -45,6 +45,7 @@ namespace RoslynPad.UI
         private Action<ExceptionResultObject?>? _onError;
         private Func<TextSpan>? _getSelection;
         private string? _ilText;
+        private string? _realCode="";
         private bool _isInitialized;
         private bool _isLiveMode;
         private Timer? _liveModeTimer;
@@ -121,6 +122,11 @@ namespace RoslynPad.UI
             // private set =>SetProperty(re
         }
 
+        public string RealCode
+        {
+            get => _realCode ?? String.Empty;
+            // private set =>SetProperty(re
+        }
         [ImportingConstructor]
         public OpenDocumentViewModel(IServiceProvider serviceProvider, MainViewModelBase mainViewModel, ICommandProvider commands, IAppDispatcher appDispatcher, ITelemetryProvider telemetryProvider)
         {
@@ -674,6 +680,7 @@ namespace RoslynPad.UI
             try
             {
                 var code = await GetCode(cancellationToken).ConfigureAwait(true);
+                _realCode = code;
                 if (_executionHost != null)
                 {
                     // Make sure the execution working directory matches the current script path

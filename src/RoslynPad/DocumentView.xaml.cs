@@ -313,8 +313,14 @@ namespace RoslynPad
             if (OutputTab.IsSelected && OutputTab.Content == null)
             {
                 var tb = new TextBox();
-                tb.SetBinding( TextBox.TextProperty, new System.Windows.Data.Binding(nameof(_viewModel.OutputText)){  Mode= System.Windows.Data.BindingMode.OneWay });// Internal.Select(r=>r.Value)
+                tb.SetBinding( TextBox.TextProperty, new System.Windows.Data.Binding(nameof(_viewModel.OutputText)){  Mode= System.Windows.Data.BindingMode.OneWay }); 
                 OutputTab.Content = tb;
+            }
+            if (CodeTab.IsSelected && CodeTab.Content == null)
+            {
+                var tb = new TextBox();
+                tb.SetBinding(TextBox.TextProperty, new System.Windows.Data.Binding(nameof(_viewModel.RealCode)) { Mode = System.Windows.Data.BindingMode.OneWay }); 
+                CodeTab.Content = tb;
             }
         }
     }

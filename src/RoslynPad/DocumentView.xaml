@@ -370,6 +370,9 @@
                 <TabItem Name="OutputTab"
                          Header="Output"
                          IsSelected="{Binding ShowOutput}" />
+                <TabItem Name="CodeTab"
+                         Header="Code"
+                         IsSelected="{Binding ShowCode}" />
                 <TabItem Name="ILViewerTab"
                          Header="IL"
                          IsSelected="{Binding ShowIL}" />
