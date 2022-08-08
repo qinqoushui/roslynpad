@@ -78,6 +78,7 @@ namespace RoslynPad.Build
                 }
             }
         }
+        public string Code { get; private set; } = string.Empty;
 
         private readonly JsonSerializer _jsonSerializer;
 
@@ -343,6 +344,7 @@ namespace RoslynPad.Build
             {
                 code = f.Invoke(code);
             }
+            Code = code;
             var tree = ParseSyntaxTree(code, _roslynHost.ParseOptions);
             var root = tree.GetRoot();
 

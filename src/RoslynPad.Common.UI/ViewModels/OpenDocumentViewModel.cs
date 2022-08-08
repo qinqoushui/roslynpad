@@ -45,7 +45,7 @@ namespace RoslynPad.UI
         private Action<ExceptionResultObject?>? _onError;
         private Func<TextSpan>? _getSelection;
         private string? _ilText;
-        private string? _realCode="";
+        private string? _realCode = "";
         private bool _isInitialized;
         private bool _isLiveMode;
         private Timer? _liveModeTimer;
@@ -116,6 +116,7 @@ namespace RoslynPad.UI
             private set => SetProperty(ref _ilText, value);
         }
 
+
         public string OutputText
         {
             get => _results == null ? string.Empty : string.Join("\r\n", _results.Select(r => r.Value).ToArray());
@@ -125,7 +126,7 @@ namespace RoslynPad.UI
         public string RealCode
         {
             get => _realCode ?? String.Empty;
-            // private set =>SetProperty(re
+            private set => SetProperty(ref _realCode, value);
         }
         [ImportingConstructor]
         public OpenDocumentViewModel(IServiceProvider serviceProvider, MainViewModelBase mainViewModel, ICommandProvider commands, IAppDispatcher appDispatcher, ITelemetryProvider telemetryProvider)
@@ -270,6 +271,7 @@ namespace RoslynPad.UI
             _dispatcher.InvokeAsync(() =>
             {
                 _results.Add(o);
+                OnPropertyChanged(nameof(OutputText));
                 ResultsAvailable?.Invoke();
             }, AppDispatcherPriority.Low);
         }
@@ -680,7 +682,6 @@ namespace RoslynPad.UI
             try
             {
                 var code = await GetCode(cancellationToken).ConfigureAwait(true);
-                _realCode = code;
                 if (_executionHost != null)
                 {
                     // Make sure the execution working directory matches the current script path
@@ -689,6 +690,7 @@ namespace RoslynPad.UI
                         _executionHostParameters.WorkingDirectory = WorkingDirectory;
 
                     await _executionHost.ExecuteAsync(code, ShowIL, OptimizationLevel).ConfigureAwait(true);
+                    RealCode = _executionHost.Code;
                 }
             }
             catch (CompilationErrorException ex)

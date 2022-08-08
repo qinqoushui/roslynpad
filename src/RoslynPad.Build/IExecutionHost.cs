@@ -13,6 +13,7 @@ namespace RoslynPad.Build
     {
         ExecutionPlatform Platform { get; set; }
         string Name { get; set; }
+        string Code { get; }
         string? DotNetExecutable { get; set; }
         ImmutableArray<MetadataReference> MetadataReferences { get; }
         ImmutableArray<AnalyzerFileReference> Analyzers { get; }
