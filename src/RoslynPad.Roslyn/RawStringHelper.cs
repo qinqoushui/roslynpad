@@ -10,7 +10,7 @@ namespace RoslynPad.Roslyn
         static RawStringHelper _ = new RawStringHelper();
         public static RawStringHelper Instance { get; } = _;
         #region  rawstring 
-        Regex regString = new Regex(@"(?<a>"""""")(?<b>[\w\W]*?)(?<c>"""""")", RegexOptions.IgnoreCase | RegexOptions.Multiline);
+        Regex regString = new Regex(@"(?<a>(?<d>\$?)"""""")(?<b>[\w\W]*?)(?<c>"""""")", RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
         /// <summary>
         /// 处理"""的写法
@@ -22,7 +22,8 @@ namespace RoslynPad.Roslyn
         {
             return findStringByRegex(regString, code, out positions, m =>
             {
-                return "@\"" + m.Groups["b"].Value.Replace("\"", "\"\"") + "\"";
+                
+                return $"{m.Groups["d"]?.Value}@\"" + m.Groups["b"].Value.Replace("\"", "\"\"") + "\"";
             });
         }
         public string findStringByRegex(Regex reg, string code, out List<(int s, int e)> positions, Func<Match, string> func)
