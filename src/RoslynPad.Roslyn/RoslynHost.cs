@@ -86,6 +86,8 @@ namespace RoslynPad.Roslyn
             // ReSharper disable once VirtualMemberCallInConstructor
             ParseOptions = CreateDefaultParseOptions();
 
+            //允许为空
+
             _documentationProviderService = GetService<IDocumentationProviderService>();
 
             DefaultReferences = references.GetReferences(DocumentationProviderFactory);

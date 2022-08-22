@@ -20,6 +20,7 @@ using Newtonsoft.Json.Linq;
 using RoslynPad.Build.ILDecompiler;
 using RoslynPad.NuGet;
 using RoslynPad.Roslyn;
+using RoslynPad.Roslyn.Diagnostics;
 using RoslynPad.Roslyn.Scripting;
 using RoslynPad.Runtime;
 using RoslynPad.Utilities;
@@ -106,6 +107,29 @@ namespace RoslynPad.Build
             MetadataReferences = ImmutableArray<MetadataReference>.Empty;
             InitCodeParser();
         }
+        //public ExecutionHost(ExecutionHostParameters parameters )
+        //{
+        //    _jsonSerializer = new JsonSerializer
+        //    {
+        //        TypeNameHandling = TypeNameHandling.Auto,
+        //        TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple
+        //    };
+
+        //    _name = "";
+        //    _parameters = parameters;
+        //    // _roslynHost = new RoslynHost();
+        //   _analyzerAssemblyLoader = new SimpleAnalyzerAssemblyLoader();
+        //    _libraries = new HashSet<LibraryRef>();
+        //    _scriptOptions = ScriptOptions.Default
+        //           .WithImports(parameters.Imports)
+        //           .WithMetadataResolver(new CachedScriptMetadataResolver(parameters.WorkingDirectory));
+
+        //    _initHostSyntax =  ParseSyntaxTree(@"RoslynPad.Runtime.RuntimeInitializer.Initialize();", new CSharpParseOptions(kind: SourceCodeKind.Script,
+        //        preprocessorSymbols: ImmutableArray.CreateRange(new[] { "TRACE", "DEBUG" }), languageVersion: LanguageVersion.Preview));
+
+        //    MetadataReferences = ImmutableArray<MetadataReference>.Empty;
+        //    InitCodeParser();
+        //}
 
         private static void WriteJson(string path, JToken token)
         {

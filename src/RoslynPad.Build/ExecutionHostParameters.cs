@@ -2,7 +2,7 @@
 
 namespace RoslynPad.Build
 {
-    internal class ExecutionHostParameters
+    public class ExecutionHostParameters
     {
         public ExecutionHostParameters(
             string buildPath,

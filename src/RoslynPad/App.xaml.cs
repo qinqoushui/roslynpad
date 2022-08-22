@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime;
+using System.Windows;
 
 namespace RoslynPad
 {
@@ -12,5 +13,12 @@ namespace RoslynPad
             ProfileOptimization.SetProfileRoot(AppDomain.CurrentDomain.BaseDirectory!);
             ProfileOptimization.StartProfile(ProfileFileName);
         }
+        //protected override void OnStartup(StartupEventArgs e)
+        //{
+        //    base.OnStartup(e);
+        //    MainWindow window = new MainWindow(e.Args);
+        //    window.Show();
+
+        //}
     }
 }

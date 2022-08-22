@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using NuGet.Configuration;
 using NuGet.Packaging;
 using RoslynPad.Roslyn;
 using RoslynPad.Utilities;
@@ -42,7 +43,7 @@ namespace RoslynPad.UI
             private set => SetProperty(ref _documentRoot, value);
         }
         public RoslynHost RoslynHost { get; private set; }
-
+        public Action? MainWindowClose { get; set; }
         public bool IsInitialized
         {
             get => _isInitialized;
@@ -142,7 +143,10 @@ namespace RoslynPad.UI
                 if (File.Exists(filePath))
                 {
                     var document = DocumentViewModel.FromPath(filePath);
-                    OpenDocument(document);
+                    if (args.Length > 3)
+                        OpenDocument(document, args[2], args[3]); // runAtNet462
+                    else
+                        OpenDocument(document); // runAtNet462
                 }
             }
         }
@@ -292,7 +296,7 @@ namespace RoslynPad.UI
 
         public IDelegateCommand ToggleOptimizationCommand { get; }
 
-        public void OpenDocument(DocumentViewModel document)
+        public void OpenDocument(DocumentViewModel document, string platform = "", string autoRun = "")
         {
             if (document.IsFolder) return;
 
@@ -301,9 +305,29 @@ namespace RoslynPad.UI
             {
                 openDocument = GetOpenDocumentViewModel(document);
                 OpenDocuments.Add(openDocument);
+
             }
 
             CurrentOpenDocument = openDocument;
+            ExecutionPlatform platform2 = openDocument.AvailablePlatforms.First();
+            if (!string.IsNullOrEmpty(platform))
+            {
+                Settings.DefaultPlatformName = openDocument.AvailablePlatforms.First(r => r.Name.Contains(platform, StringComparison.OrdinalIgnoreCase)).Name;
+            }
+            CurrentOpenDocument.AutoRun = async () =>
+              {
+                  if (autoRun.StartsWith("run", StringComparison.OrdinalIgnoreCase))
+                  {
+                      //openDocument.RunCommand.Execute();//.Run(platform2!);
+                      await openDocument.Run(platform2!);
+                  }
+                  if (autoRun.EndsWith("close", StringComparison.OrdinalIgnoreCase))
+                  {
+                      //³ÌÐòÍË³ö
+                      MainWindowClose?.Invoke();
+                  }
+              };
+
         }
 
         public async Task OpenFile()

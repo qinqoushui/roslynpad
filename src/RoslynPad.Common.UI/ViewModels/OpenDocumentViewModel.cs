@@ -616,8 +616,11 @@ namespace RoslynPad.UI
             UpdatePackages();
 
             RestartHostCommand?.Execute();
+            //初始化完成后如果有自动启动就执行
+            AutoRun?.Invoke();
         }
-
+        public Action? AutoRun { get; set; }
+        public Action? AutoClose { get; set; }
         public DocumentId DocumentId
         {
             get => _documentId ?? throw new ArgumentNullException(nameof(_documentId));
@@ -658,7 +661,11 @@ namespace RoslynPad.UI
                 }
             }
         }
-
+        public async Task Run(ExecutionPlatform platform)
+        {
+           // _executionHost.Platform = platform;
+            await Run();
+        }
         private async Task Run()
         {
             if (IsRunning) return;

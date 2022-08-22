@@ -23,7 +23,10 @@ namespace RoslynPad
         private readonly MainViewModelBase _viewModel;
         private bool _isClosing;
         private bool _isClosed;
-
+        //public MainWindow(string[] args) : this()
+        //{
+        //    System.Windows.Forms.MessageBox.Show(string.Join(",",args));
+        //}
 #pragma warning disable CS8618 // Non-nullable field is uninitialized.
         public MainWindow()
 #pragma warning restore CS8618 // Non-nullable field is uninitialized.
@@ -36,7 +39,7 @@ namespace RoslynPad
             var locator = container.CreateContainer().GetExport<IServiceProvider>();
 
             _viewModel = locator.GetService<MainViewModelBase>();
-
+            _viewModel.MainWindowClose = () => this.Close();
             DataContext = _viewModel;
             InitializeComponent();
             DocumentsPane.ToggleAutoHide();
@@ -60,7 +63,7 @@ namespace RoslynPad
             {
                 SaveDockLayout();
                 SaveWindowLayout();
-                
+
                 _isClosing = true;
                 IsEnabled = false;
                 e.Cancel = true;
@@ -158,7 +161,7 @@ namespace RoslynPad
 
             Application.Current.Shutdown();
         }
-        
+
         private async void DockingManager_OnDocumentClosing(object sender, DocumentClosingEventArgs e)
         {
             e.Cancel = true;
