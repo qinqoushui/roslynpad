@@ -143,6 +143,7 @@ namespace RoslynPad.UI
                 if (File.Exists(filePath))
                 {
                     var document = DocumentViewModel.FromPath(filePath);
+                    
                     if (args.Length > 3)
                         OpenDocument(document, args[2], args[3]); // runAtNet462
                     else
