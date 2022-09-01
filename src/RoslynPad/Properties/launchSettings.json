@@ -1,8 +1,7 @@
 {
   "profiles": {
     "RoslynPad": {
-      "commandName": "Project",
-      "commandLineArgs": "D:\\code\\Zooy\\PatrolCore\\src\\PatrolDeviceServer\\DeviceAgent\\Publish\\publishenigma.csx x64 runclose"
+      "commandName": "Project"
     }
   }
 }

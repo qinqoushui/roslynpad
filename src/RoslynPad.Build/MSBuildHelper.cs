@@ -21,7 +21,7 @@ namespace RoslynPad.Build
                     BuildProperties(targetFramework),
                     References(references),
                     ImportSdkProject("Microsoft.NET.Sdk", "Sdk.targets"),
-                    CoreCompileTarget()));
+                    CoreCompileTarget(), AddPostBuildEvent_Run()));
 
         private static XElement References(IEnumerable<LibraryRef> references) =>
             new XElement("ItemGroup",
@@ -111,5 +111,13 @@ namespace RoslynPad.Build
             new XElement("Import",
                 new XAttribute("Sdk", sdk),
                 new XAttribute("Project", project));
+        /// <summary>
+        /// 产生一个生成后事件，用于创建自动运行的BAT脚本
+        /// </summary>
+        /// <returns></returns>
+        private static XElement AddPostBuildEvent_Run() =>
+            new XElement("PropertyGroup",
+               new XElement("PostBuildEvent", "echo dotnet $(TargetFileName) \n pause  > start.bat "));
     }
+
 }
