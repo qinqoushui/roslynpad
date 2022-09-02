@@ -20,8 +20,20 @@ namespace RoslynPad.Build
 
             TemplateServiceConfiguration config = new TemplateServiceConfiguration();
             var service = RazorEngineService.Create(config);
+            //替换代码中的workpath变量
+            CodeParsers.Add(s =>
+            {
+                //string workpath="";
+                //var _p = @$"var _parameters= new {{WorkingDirectory = @"" {_parameters.WorkingDirectory} "" }};";
+                //return _p + Environment.NewLine + s;
+                return System.Text.RegularExpressions.Regex.Replace(s, @"string\s+_workpath\s*=\s*""""\s*;", $"string _workPath=@\"{_parameters.WorkingDirectory}\";", RegexOptions.IgnoreCase);
+
+
+            });
+
             CodeParsers.Add(s => RawStringHelper.Instance.ParseRazorSection(s, out var positions, m =>
             {
+
                 try
                 {
                     //@Model.x
