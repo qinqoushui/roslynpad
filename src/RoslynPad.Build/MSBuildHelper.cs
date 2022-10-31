@@ -117,7 +117,7 @@ namespace RoslynPad.Build
         /// <returns></returns>
         private static XElement AddPostBuildEvent_Run() =>
             new XElement("PropertyGroup",
-               new XElement("PostBuildEvent", "echo dotnet $(TargetFileName) \n pause  > start.bat "));
+               new XElement("PostBuildEvent", "echo  dotnet $(TargetFileName)      > start.bat \n  echo pause >> start.bat "));
     }
 
 }
