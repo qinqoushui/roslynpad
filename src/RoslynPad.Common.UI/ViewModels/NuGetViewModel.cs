@@ -67,7 +67,8 @@ namespace RoslynPad.UI
 
                     try
                     {
-                        settings = new Settings(appSettings.GetDefaultDocumentPath(), "RoslynPad.nuget.config");
+                        //settings = new Settings( appSettings.GetDefaultDocumentPath(), "RoslynPad.nuget.config");
+                        settings = new Settings(AppContext.BaseDirectory, "RoslynPad.nuget.config");
                     }
                     catch (NuGetConfigurationException ex)
                     {

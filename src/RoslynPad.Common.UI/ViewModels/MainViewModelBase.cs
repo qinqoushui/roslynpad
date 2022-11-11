@@ -77,6 +77,7 @@ namespace RoslynPad.UI
 
             NewDocumentCommand = commands.Create(CreateNewDocument);
             OpenFileCommand = commands.CreateAsync(OpenFile);
+            ReOpenFileCommand = commands.Create(ReOpenFile);
             CloseCurrentDocumentCommand = commands.CreateAsync(CloseCurrentDocument);
             CloseDocumentCommand = commands.CreateAsync<OpenDocumentViewModel>(CloseDocument);
             ClearErrorCommand = commands.Create(() => _telemetryProvider.ClearLastError());
@@ -115,7 +116,7 @@ namespace RoslynPad.UI
         {
             RoslynHost = await Task.Run(() => new RoslynHost(CompositionAssemblies,
                 RoslynHostReferences.NamespaceDefault.With(typeNamespaceImports: new[] { typeof(Runtime.ObjectExtensions) }),
-                disabledDiagnostics: ImmutableArray.Create("CS1701", "CS1702","CS8618","CS8600", "CS8601", "CS8602", "CS8603", "CS8604")))
+                disabledDiagnostics: ImmutableArray.Create("CS1701", "CS1702", "CS8618", "CS8600", "CS8601", "CS8602", "CS8603", "CS8604")))
                 .ConfigureAwait(true);
 
             OpenDocumentFromCommandLine();
@@ -143,7 +144,7 @@ namespace RoslynPad.UI
                 if (File.Exists(filePath))
                 {
                     var document = DocumentViewModel.FromPath(filePath);
-                    
+
                     if (args.Length > 3)
                         OpenDocument(document, args[2], args[3]); // runAtNet462
                     else
@@ -288,6 +289,7 @@ namespace RoslynPad.UI
         public IDelegateCommand NewDocumentCommand { get; }
 
         public IDelegateCommand OpenFileCommand { get; }
+        public IDelegateCommand ReOpenFileCommand { get; }
 
         public IDelegateCommand EditUserDocumentPathCommand { get; }
 
@@ -404,7 +406,11 @@ namespace RoslynPad.UI
                 ClearCurrentOpenDocument();
             }
         }
-
+        public void ReOpenFile()
+        {
+            if (CurrentOpenDocument == null) return;
+            CurrentOpenDocument.ReOpen();
+        }
         public async Task CloseAllDocuments()
         {
             // can't modify the collection while enumerating it.

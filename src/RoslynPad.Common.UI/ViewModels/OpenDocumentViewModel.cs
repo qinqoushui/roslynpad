@@ -151,6 +151,7 @@ namespace RoslynPad.UI
 
             OpenBuildPathCommand = commands.Create(() => OpenBuildPath());
             SaveCommand = commands.CreateAsync(() => Save(promptSave: false));
+            ReOpenCommand = commands.Create(ReOpen);
             RunCommand = commands.CreateAsync(Run, () => !IsRunning && RestoreSuccessful && Platform != null);
             RestartHostCommand = commands.CreateAsync(RestartHost, () => Platform != null);
             FormatDocumentCommand = commands.CreateAsync(FormatDocument);
@@ -637,6 +638,7 @@ namespace RoslynPad.UI
         public IDelegateCommand OpenBuildPathCommand { get; }
 
         public IDelegateCommand SaveCommand { get; }
+        public IDelegateCommand ReOpenCommand { get; }
 
         public IDelegateCommand RunCommand { get; }
 
@@ -663,7 +665,7 @@ namespace RoslynPad.UI
         }
         public async Task Run(ExecutionPlatform platform)
         {
-           // _executionHost.Platform = platform;
+            // _executionHost.Platform = platform;
             await Run();
         }
         private async Task Run()
@@ -901,6 +903,14 @@ namespace RoslynPad.UI
             _viewDisposable?.Dispose();
         }
 
+        public void ReOpen()
+        {
+            if (Document == null)
+                return;
+            MainViewModel.CloseDocumentCommand.Execute(this);
+            MainViewModel.OpenDocument(DocumentViewModel.FromPath(Document.Path));
+            // Document..ReOpen();
+        }
         public bool IsDirty
         {
             get => _isDirty;

@@ -21,6 +21,8 @@
                     Command="{Binding NewDocumentCommand, Mode=OneTime}" />
         <KeyBinding Gesture="Ctrl+O"
                     Command="{Binding OpenFileCommand, Mode=OneTime}" />
+        <KeyBinding Gesture="Ctrl+R"
+                    Command="{Binding ReOpenFileCommand, Mode=OneTime}" />
         <KeyBinding Gesture="Ctrl+W"
                     Command="{Binding CloseCurrentDocumentCommand, Mode=OneTime}" />
         <KeyBinding Gesture="Ctrl+Shift+O"

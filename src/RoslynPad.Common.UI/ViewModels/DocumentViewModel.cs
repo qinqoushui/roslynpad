@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis.Differencing;
 using RoslynPad.Utilities;
 
 namespace RoslynPad.UI
@@ -240,6 +241,11 @@ namespace RoslynPad.UI
             }
 
             Children.Insert(insertIndex, documentViewModel);
+        }
+
+        public void ReOpen()
+        {
+            
         }
     }
 }
