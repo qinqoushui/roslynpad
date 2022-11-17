@@ -169,7 +169,7 @@ namespace RoslynPad.UI
                 serviceProvider.GetService<NuGetViewModel>().ConfigPath,
                 roslynHost.DefaultImports,
                 roslynHost.DisabledDiagnostics,
-                WorkingDirectory);
+                WorkingDirectory,Document?.Path!);
             _executionHost = new ExecutionHost(_executionHostParameters, roslynHost);
 
             _executionHost.Dumped += ExecutionHostOnDump;
@@ -697,7 +697,8 @@ namespace RoslynPad.UI
                     // which may have changed since we loaded.
                     if (_executionHostParameters.WorkingDirectory != WorkingDirectory)
                         _executionHostParameters.WorkingDirectory = WorkingDirectory;
-
+                    if (_executionHostParameters.ScriptFileName != Document.Name)
+                        _executionHostParameters.ScriptFileName = Document.Name;
                     await _executionHost.ExecuteAsync(code, ShowIL, OptimizationLevel).ConfigureAwait(true);
                     RealCode = _executionHost.Code;
                 }

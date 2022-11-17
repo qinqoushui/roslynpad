@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis.Scripting;
 using RazorEngine.Configuration;
 using RazorEngine.Templating;
 using RoslynPad.Roslyn;
@@ -30,7 +31,13 @@ namespace RoslynPad.Build
 
 
             });
+            CodeParsers.Add(s =>
+            {
+                return  Regex.Replace(s, @"string\s+_filename\s*=\s*""""\s*;", $"string _fileName=@\"{_parameters.ScriptFileName}\";", RegexOptions.IgnoreCase);
 
+
+            });
+            
             CodeParsers.Add(s => RawStringHelper.Instance.ParseRazorSection(s, out var positions, m =>
             {
 
